@@ -352,6 +352,14 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:20px; height:20
 .sc-time { font-size:.55rem; color:var(--sub); margin-bottom:5px; }
 .sc-spark { height:32px; }
 .sc-spark canvas { width:100% !important; height:32px !important; }
+
+/* ── Client-side forecast controls ── */
+.forecast-controls { display:flex; align-items:center; gap:7px; margin-top:11px; flex-wrap:wrap; padding-top:11px; border-top:1px solid var(--border); }
+.fcst-label { font-size:.66rem; font-weight:600; color:var(--sub); white-space:nowrap; }
+.fcst-btn { padding:4px 12px; border-radius:99px; border:1px solid var(--border); background:var(--raised); font-size:.7rem; font-weight:700; color:var(--sub); cursor:pointer; font-family:'Prompt',sans-serif; transition:all .15s; white-space:nowrap; }
+.fcst-btn:hover { border-color:var(--teal); color:var(--teal); }
+.fcst-btn.active { background:var(--teal); color:#0f172a; border-color:var(--teal); box-shadow:0 0 10px rgba(13,188,185,.3); }
+.fcst-info { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--sub); margin-left:4px; }
 </style>
 </head>
 <body>
@@ -523,10 +531,18 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:20px; height:20
 
     <div class="chart-card fade" style="margin-bottom:10px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
-        <div class="chart-title" style="margin:0"><i class="ti ti-trending-up"></i> แนวโน้ม PM2.5 (20 จุดล่าสุด)</div>
+        <div class="chart-title" style="margin:0"><i class="ti ti-trending-up"></i> PM2.5 + AI ทำนายล่วงหน้า</div>
         <button class="export-btn" id="btn-export-csv"><i class="ti ti-download"></i> CSV</button>
       </div>
-      <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+      <div class="chart-wrap" style="height:150px"><canvas id="trend-chart"></canvas></div>
+      <div class="forecast-controls">
+        <span class="fcst-label">🔮 ทำนาย:</span>
+        <button class="fcst-btn active" data-h="1">+1h</button>
+        <button class="fcst-btn" data-h="3">+3h</button>
+        <button class="fcst-btn" data-h="6">+6h</button>
+        <button class="fcst-btn" data-h="12">+12h</button>
+        <span class="fcst-info" id="fcst-info"></span>
+      </div>
     </div>
 
     <div class="chart-card fade" style="margin-bottom:10px">
@@ -972,14 +988,82 @@ function tinyHistChart(canvas, data, labels, color){
     options:{responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:isDark()?'#1a2540':'#fff', titleColor:isDark()?'#e2e8f0':'#1e293b', bodyColor:'#64748b', borderColor:color, borderWidth:1, padding:8}}, scales:{x:{display:false}, y:{display:false, beginAtZero:false}}}});
 }
 
-/* ── Trend chart ── */
+/* ── Client-side OLS forecast ── */
+function _mMul(A,B){const m=A.length,n=B[0].length,p=B.length;return Array.from({length:m},(_,i)=>Array.from({length:n},(_,j)=>A[i].reduce((s,_,k)=>s+A[i][k]*B[k][j],0)));}
+function _mT(A){return A[0].map((_,j)=>A.map(r=>r[j]));}
+function _mInv(A){const n=A.length,M=A.map((r,i)=>[...r,...Array.from({length:n},(_,j)=>i===j?1:0)]);for(let c=0;c<n;c++){let mx=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[mx][c]))mx=r;[M[c],M[mx]]=[M[mx],M[c]];const pv=M[c][c];if(Math.abs(pv)<1e-10)return null;for(let j=0;j<2*n;j++)M[c][j]/=pv;for(let r=0;r<n;r++)if(r!==c){const f=M[r][c];for(let j=0;j<2*n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r.slice(n));}
+function _ols(X,y){const Xt=_mT(X),inv=_mInv(_mMul(Xt,X));if(!inv)return null;return _mMul(inv,_mMul(Xt,y.map(v=>[v]))).map(r=>r[0]);}
+function _feat(pm,l1,l2,hum,wind,dtStr){const d=new Date((dtStr||'').replace(' ','T')),h=d.getHours()+d.getMinutes()/60,dw=d.getDay();return[1,pm,l1,l2,hum||70,wind||2,Math.sin(2*Math.PI*h/24),Math.cos(2*Math.PI*h/24),Math.sin(2*Math.PI*dw/7),Math.cos(2*Math.PI*dw/7)];}
+function _estIntv(recs){const ds=[];for(let i=1;i<Math.min(recs.length,10);i++){const d=new Date((recs[i].datetime||'').replace(' ','T'))-new Date((recs[i-1].datetime||'').replace(' ','T'));if(d>0&&d<7.2e6)ds.push(d);}return ds.length?ds.reduce((s,v)=>s+v,0)/ds.length:6e5;}
+let _fcM=null,_fcRmse=5,_fcHorizon=1;
+function _trainFc(recs){
+  if(recs.length<12){_fcM=null;return;}
+  const pm=recs.map(r=>parseFloat(r.pm2_5)||0),hum=_latestWeather?.humidity||70,wind=_latestWeather?.wind||2;
+  const X=[],y=[];
+  for(let i=2;i<pm.length-1;i++){X.push(_feat(pm[i],pm[i-1],pm[i-2],hum,wind,recs[i].datetime||''));y.push(pm[i+1]);}
+  const beta=_ols(X,y);if(!beta){_fcM=null;return;}
+  const res=X.map((x,i)=>x.reduce((s,v,j)=>s+v*beta[j],0)-y[i]);
+  _fcRmse=Math.sqrt(res.reduce((s,r)=>s+r*r,0)/res.length)||1;_fcM=beta;
+}
+function _runFc(recs,nSteps){
+  if(!_fcM||recs.length<3)return null;
+  const pm=recs.map(r=>parseFloat(r.pm2_5)||0),hum=_latestWeather?.humidity||70,wind=_latestWeather?.wind||2;
+  const intv=_estIntv(recs),lastDt=new Date((recs[recs.length-1].datetime||'').replace(' ','T'));
+  let cur=pm[pm.length-1],l1=pm[pm.length-2],l2=pm[pm.length-3];
+  const pred=[],up=[],lo=[],lbs=[];
+  for(let s=1;s<=nSteps;s++){
+    const dt=new Date(lastDt.getTime()+s*intv);
+    const ds=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    const v=Math.max(0,_feat(cur,l1,l2,hum,wind,ds).reduce((s,v,i)=>s+v*_fcM[i],0));
+    const sig=_fcRmse*Math.sqrt(s);
+    pred.push(+v.toFixed(2));up.push(+(v+1.96*sig).toFixed(2));lo.push(+Math.max(0,v-1.96*sig).toFixed(2));
+    lbs.push(`${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`);
+    l2=l1;l1=cur;cur=v;
+  }
+  return{pred,up,lo,lbs};
+}
+function updateForecast(){
+  const recs=_devAll[_activeDevice]||[],last20=recs.slice(-20);
+  const hLbs=last20.map(r=>r.datetime?.split(' ')[1]?.slice(0,5)||'');
+  const hData=last20.map(r=>parseFloat(r.pm2_5));
+  if(!recs.length){trendChart.data.labels=[];trendChart.data.datasets.forEach(d=>d.data=[]);trendChart.update();return;}
+  _trainFc(recs);
+  const intv=_estIntv(recs),sph=Math.max(1,Math.round(3.6e6/intv)),nSteps=_fcHorizon*sph;
+  const fc=_runFc(recs,nSteps);
+  if(!fc){
+    trendChart.data.labels=hLbs;trendChart.data.datasets[0].data=hData;
+    [1,2,3].forEach(i=>trendChart.data.datasets[i].data=[]);trendChart.update();return;
+  }
+  const hl=hLbs.length;
+  trendChart.data.labels=[...hLbs,...fc.lbs];
+  trendChart.data.datasets[0].data=[...hData,...Array(fc.lbs.length).fill(null)];
+  trendChart.data.datasets[1].data=[...Array(hl-1).fill(null),hData[hl-1],...fc.up];
+  trendChart.data.datasets[2].data=[...Array(hl-1).fill(null),hData[hl-1],...fc.lo];
+  trendChart.data.datasets[3].data=[...Array(hl-1).fill(null),hData[hl-1],...fc.pred];
+  const el=document.getElementById('fcst-info');
+  if(el&&_fcM)el.textContent=`RMSE ${_fcRmse.toFixed(1)} µg/m³`;
+  trendChart.update();
+}
+
+/* ── Trend chart (history + forecast datasets) ── */
 const tCtx = document.getElementById('trend-chart').getContext('2d');
+const _histGrad=(()=>{const g=tCtx.createLinearGradient(0,0,0,130);g.addColorStop(0,'rgba(79,135,255,.2)');g.addColorStop(1,'rgba(79,135,255,0)');return g;})();
 const trendChart = new Chart(tCtx, {type:'line',
-  data:{labels:[], datasets:[{label:'PM2.5', data:[], borderColor:'#4f87ff',
-    backgroundColor:(()=>{ const g=tCtx.createLinearGradient(0,0,0,100); g.addColorStop(0,'rgba(79,135,255,.18)'); g.addColorStop(1,'rgba(79,135,255,0)'); return g; })(),
-    borderWidth:2.5, pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:'#4f87ff', pointBorderWidth:2.5, tension:.4, fill:true}]},
-  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:'#fff', titleColor:'#1e293b', bodyColor:'#64748b', borderColor:'#4f87ff', borderWidth:1, padding:10, callbacks:{label:c=>`PM2.5: ${c.parsed.y} µg/m³`}}},
-    scales:{y:{grid:{color:gridColor()}, ticks:{color:tickColor(), font:{size:10, family:'DM Mono'}}}, x:{grid:{display:false}, ticks:{color:tickColor(), font:{size:9}, maxTicksLimit:7}}}}
+  data:{labels:[], datasets:[
+    {label:'PM2.5', data:[], borderColor:'#4f87ff', backgroundColor:_histGrad, borderWidth:2.5, pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:'#4f87ff', pointBorderWidth:2.5, tension:.4, fill:true, spanGaps:false},
+    {label:'_upper', data:[], borderColor:'transparent', backgroundColor:'rgba(13,188,185,.13)', fill:'+1', pointRadius:0, borderWidth:0, tension:.4, spanGaps:false},
+    {label:'_lower', data:[], borderColor:'transparent', fill:false, pointRadius:0, borderWidth:0, tension:.4, spanGaps:false},
+    {label:'ทำนาย (OLS)', data:[], borderColor:'#0dbcb9', borderDash:[6,3], borderWidth:2, pointRadius:0, fill:false, tension:.4, spanGaps:false},
+  ]},
+  options:{responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:true, labels:{filter:item=>!item.text.startsWith('_'), color:tickColor(), font:{size:10}, boxWidth:14, padding:10}},
+      tooltip:{backgroundColor:isDark()?'#1a2540':'#fff', titleColor:isDark()?'#e2e8f0':'#1e293b', bodyColor:'#64748b', borderColor:'#4f87ff', borderWidth:1, padding:10,
+        callbacks:{label:c=>{if(c.dataset.label.startsWith('_'))return null;return `${c.dataset.label}: ${c.parsed.y?.toFixed(1)} µg/m³`;}}
+      }
+    },
+    scales:{y:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:10,family:'DM Mono'}}},x:{grid:{display:false},ticks:{color:tickColor(),font:{size:9},maxTicksLimit:10}}}
+  }
 });
 
 /* ── Prediction history chart ── */
@@ -1053,10 +1137,7 @@ function renderActiveDevice(){
   const pmNow  = parseFloat(latest?.pm2_5) || 0;
   const allPm  = records.map(r => parseFloat(r.pm2_5)).filter(v => !isNaN(v));
   updateHero(pmNow, latest?.datetime || '', allPm);
-  const last20 = records.slice(-20);
-  trendChart.data.labels  = last20.map(r => r.datetime?.split(' ')[1]?.slice(0,5) || '');
-  trendChart.data.datasets[0].data = last20.map(r => parseFloat(r.pm2_5));
-  trendChart.update();
+  updateForecast();
 }
 
 /* ── Device tab switching ── */
@@ -1166,6 +1247,7 @@ async function loadWeather(){
     document.getElementById('w-hum').textContent  = snap.humidity;
     document.getElementById('w-wind').textContent = snap.wind.toFixed(1);
     updateWeatherInlineTable();
+    updateForecast();
   } catch {
     ['w-temp','w-hum','w-wind'].forEach(id => { document.getElementById(id).textContent = 'N/A'; });
   }
@@ -1372,6 +1454,16 @@ if(viewer){
     }
   });
 }
+
+/* ── Forecast horizon buttons ── */
+document.querySelectorAll('.fcst-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.fcst-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _fcHorizon = parseInt(btn.dataset.h);
+    updateForecast();
+  });
+});
 </script>
 </body>
 </html>
