@@ -736,6 +736,55 @@ input[type=range]::-webkit-slider-thumb {
 .nav-item.active .nav-label { font-weight:700; }
 .nav-pip { width:18px !important; height:4px !important; border-radius:2px !important; }
 
+/* ── Sensor Status Cards (horizontal sparkline) ── */
+.sensor-cards {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:10px; margin-bottom:14px;
+}
+.sensor-card {
+  background:var(--white); border:1px solid var(--border);
+  border-radius:18px; padding:14px 14px 10px;
+  cursor:pointer; overflow:hidden; position:relative;
+  box-shadow:var(--glow-card);
+  transition:transform .2s, box-shadow .2s, background .3s, border-color .3s;
+}
+.sensor-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  border-radius:18px 18px 0 0;
+}
+.sensor-card[data-device="device1"]::before { background:var(--blue); }
+.sensor-card[data-device="device2"]::before { background:#db2777; }
+.sensor-card[data-device="device3"]::before { background:#d97706; }
+.sensor-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); }
+.sensor-card:active { transform:scale(.97); }
+.sensor-card.sc-active {
+  border-color:var(--blue);
+  box-shadow:0 0 0 2px rgba(79,135,255,.25), var(--glow-card);
+}
+.sensor-card[data-device="device2"].sc-active { border-color:#db2777; box-shadow:0 0 0 2px rgba(219,39,119,.25), var(--glow-card); }
+.sensor-card[data-device="device3"].sc-active { border-color:#d97706; box-shadow:0 0 0 2px rgba(217,119,6,.25), var(--glow-card); }
+.sc-header { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+.sc-live-dot {
+  width:7px; height:7px; border-radius:50%; flex-shrink:0;
+  animation:blink 2s infinite;
+}
+.sc-name { font-size:.72rem; font-weight:700; color:var(--text); flex:1; }
+.sc-badge {
+  font-size:.58rem; font-weight:700; padding:2px 7px;
+  border-radius:99px; background:var(--raised); color:var(--sub);
+  border:1px solid var(--border); white-space:nowrap;
+  transition:background .4s, color .4s, border-color .4s;
+}
+.sc-pm {
+  font-family:'DM Mono',monospace; font-size:1.75rem; font-weight:500;
+  line-height:1; color:var(--text); transition:color .4s;
+}
+.sc-pm-row { display:flex; align-items:baseline; gap:4px; margin-bottom:3px; }
+.sc-unit { font-size:.6rem; color:var(--sub); }
+.sc-time { font-size:.58rem; color:var(--sub); font-family:'DM Mono',monospace; margin-bottom:8px; }
+.sc-spark { height:38px; margin:0 -2px; }
+.sc-spark canvas { width:100%!important; height:38px!important; }
+
 /* ── Ambient body glow ── */
 body::after {
   content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
@@ -783,6 +832,53 @@ body::after {
       <button class="dev-tab" data-device="device2">📡 SCL (Device 2)</button>
       <button class="dev-tab" data-device="device3">📡 S14 (Device 3)</button>
     </div>
+
+    <!-- ── Sensor Status Cards with Sparklines ── -->
+    <div class="sensor-cards fade" style="animation-delay:.07s">
+
+      <div class="sensor-card sc-active" id="sc-device1" data-device="device1">
+        <div class="sc-header">
+          <div class="sc-live-dot" style="background:var(--blue)"></div>
+          <div class="sc-name">S12 · Device 1</div>
+          <div class="sc-badge" id="sc-badge-device1">--</div>
+        </div>
+        <div class="sc-pm-row">
+          <div class="sc-pm" id="sc-pm-device1">--</div>
+          <div class="sc-unit">µg/m³</div>
+        </div>
+        <div class="sc-time" id="sc-time-device1">--</div>
+        <div class="sc-spark"><canvas id="spark-device1"></canvas></div>
+      </div>
+
+      <div class="sensor-card" id="sc-device2" data-device="device2">
+        <div class="sc-header">
+          <div class="sc-live-dot" style="background:#db2777"></div>
+          <div class="sc-name">SCL · Device 2</div>
+          <div class="sc-badge" id="sc-badge-device2">--</div>
+        </div>
+        <div class="sc-pm-row">
+          <div class="sc-pm" id="sc-pm-device2">--</div>
+          <div class="sc-unit">µg/m³</div>
+        </div>
+        <div class="sc-time" id="sc-time-device2">--</div>
+        <div class="sc-spark"><canvas id="spark-device2"></canvas></div>
+      </div>
+
+      <div class="sensor-card" id="sc-device3" data-device="device3">
+        <div class="sc-header">
+          <div class="sc-live-dot" style="background:#d97706"></div>
+          <div class="sc-name">S14 · Device 3</div>
+          <div class="sc-badge" id="sc-badge-device3">--</div>
+        </div>
+        <div class="sc-pm-row">
+          <div class="sc-pm" id="sc-pm-device3">--</div>
+          <div class="sc-unit">µg/m³</div>
+        </div>
+        <div class="sc-time" id="sc-time-device3">--</div>
+        <div class="sc-spark"><canvas id="spark-device3"></canvas></div>
+      </div>
+
+    </div><!-- /.sensor-cards -->
 
     <div class="home-grid">
       <div class="home-col-left">
@@ -1402,7 +1498,48 @@ function updateChartsTheme(){
 const _devAll = { device1:[], device2:[], device3:[] };
 let _activeDevice = 'device1';
 let _mPmChart = null, _mWeatherChart = null, _weatherInlineChart = null;
-const _sparkCharts = {}, _devCharts = {};
+const _sparkCharts = {}, _devCharts = {}, _scSparkCharts = {};
+
+/* ── Sensor card updater ── */
+function updateSensorCard(device, records) {
+  if (!records.length) return;
+  const latest = records[records.length - 1];
+  const pm = parseFloat(latest?.pm2_5) || 0;
+  const lv = getLevel(pm);
+  const info = DEVICE_INFO[device];
+
+  const pmEl = document.getElementById('sc-pm-' + device);
+  if (pmEl) { pmEl.textContent = pm.toFixed(1); pmEl.style.color = lv.color; }
+
+  const badge = document.getElementById('sc-badge-' + device);
+  if (badge) {
+    badge.textContent = lv.label;
+    badge.style.background = lv.bg;
+    badge.style.color = lv.color;
+    badge.style.borderColor = lv.ring;
+  }
+
+  const timeEl = document.getElementById('sc-time-' + device);
+  if (timeEl) {
+    const t = latest?.datetime?.split(' ')?.[1]?.slice(0, 5) || '--';
+    timeEl.textContent = 'อัปเดต ' + t;
+  }
+
+  const canvas = document.getElementById('spark-' + device);
+  if (!canvas) return;
+  const last12 = records.slice(-12);
+  const data = last12.map(r => parseFloat(r.pm2_5)).filter(v => !isNaN(v));
+  if (data.length < 2) return;
+  if (_scSparkCharts[device]) { _scSparkCharts[device].destroy(); }
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 38);
+  grad.addColorStop(0, info.color + '44'); grad.addColorStop(1, info.color + '00');
+  _scSparkCharts[device] = new Chart(canvas, {
+    type: 'line',
+    data: { labels: last12.map((_, i) => i), datasets: [{ data, borderColor: info.color, backgroundColor: grad, borderWidth: 2, pointRadius: 0, tension: .4, fill: true }] },
+    options: { responsive: false, animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, beginAtZero: false } } }
+  });
+}
 let _latestWeather = null;
 
 /* ── Weather localStorage persistence ── */
@@ -1433,6 +1570,7 @@ function saveWeatherHist(){
     const hb = document.querySelector(`[slot="${info.hotspot}"]`);
     if(hb) hb.style.backgroundColor = lv.color;
 
+    updateSensorCard(device, _devAll[device]);
     if(device === _activeDevice) renderActiveDevice();
   });
 });
@@ -1733,6 +1871,31 @@ document.getElementById('btn-export-csv').addEventListener('click', () => {
         ).join('');
     openModal('modal-weather');
   });
+});
+
+/* ── Sensor card click → switch active device ── */
+function setSensorCardActive(device) {
+  document.querySelectorAll('.sensor-card').forEach(c => c.classList.remove('sc-active'));
+  const sc = document.getElementById('sc-' + device);
+  if (sc) sc.classList.add('sc-active');
+}
+document.querySelectorAll('.sensor-card').forEach(card => {
+  card.classList.add('ripple-el');
+  card.addEventListener('click', function(e) {
+    addRipple(e);
+    const device = card.dataset.device;
+    document.querySelectorAll('.dev-tab').forEach(b => b.classList.remove('active'));
+    const tab = document.querySelector(`.dev-tab[data-device="${device}"]`);
+    if (tab) tab.classList.add('active');
+    _activeDevice = device;
+    setSensorCardActive(device);
+    renderActiveDevice();
+  });
+});
+
+/* ── Keep sensor cards in sync when dev-tab clicked ── */
+document.querySelectorAll('.dev-tab').forEach(btn => {
+  btn.addEventListener('click', () => setSensorCardActive(btn.dataset.device), true);
 });
 
 /* ── Attach ripple to interactive elements ── */
