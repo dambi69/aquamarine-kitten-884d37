@@ -1,0 +1,5 @@
+serviceAccountKey.json
+*.pkl
+*.log
+__pycache__/
+.env

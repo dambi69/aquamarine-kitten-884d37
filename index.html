@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartAir · KMUTT</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+<style>
+:root {
+  --good:#16a34a; --good-bg:#dcfce7; --good-ring:#86efac;
+  --mod:#d97706;  --mod-bg:#fef3c7;  --mod-ring:#fcd34d;
+  --bad:#dc2626;  --bad-bg:#fee2e2;  --bad-ring:#fca5a5;
+
+  --bg:#f0f4f8;
+  --white:#ffffff;
+  --text:#1e293b;
+  --sub:#64748b;
+  --border:#e2e8f0;
+  --raised:#f1f5f9;
+  --nav-bg:rgba(255,255,255,0.92);
+
+  --blue:#4f87ff; --teal:#0dbcb9; --rose:#f45b7a;
+  --amber:#f59e0b; --violet:#8b5cf6; --green:#22c55e;
+
+  --r:24px; --r-sm:16px;
+  --shadow:0 2px 14px rgba(30,41,59,.08);
+  --shadow-md:0 8px 32px rgba(30,41,59,.14);
+
+  --current-c:var(--good);
+  --current-bg:var(--good-bg);
+  --current-ring:var(--good-ring);
+
+  --nav-h:68px;
+}
+
+[data-theme="dark"] {
+  --bg:#0f172a;
+  --white:#1a2540;
+  --text:#e2e8f0;
+  --sub:#94a3b8;
+  --border:#1e3356;
+  --raised:#1e2d4a;
+  --nav-bg:rgba(15,23,42,0.94);
+  --shadow:0 2px 14px rgba(0,0,0,.35);
+  --shadow-md:0 8px 32px rgba(0,0,0,.55);
+  --good-bg:#052e16; --good-ring:#166534;
+  --mod-bg:#451a03;  --mod-ring:#92400e;
+  --bad-bg:#450a0a;  --bad-ring:#991b1b;
+}
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Prompt',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; transition:background .3s,color .3s; }
+
+.page { max-width:720px; margin:0 auto; padding:16px 14px; padding-bottom:calc(var(--nav-h) + 20px); }
+.tab-section { display:none; }
+.tab-section.active { display:block; }
+
+/* ── Error banner ── */
+.error-banner { display:none; position:fixed; top:0; left:0; right:0; z-index:2000; background:#dc2626; color:#fff; padding:10px 16px; font-size:.8rem; font-weight:600; align-items:center; justify-content:space-between; gap:12px; }
+.error-banner.show { display:flex; }
+.error-retry { background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.4); color:#fff; border-radius:8px; padding:4px 12px; font-size:.75rem; font-weight:700; cursor:pointer; font-family:'Prompt',sans-serif; }
+
+/* ── Header ── */
+.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon { width:42px; height:42px; border-radius:13px; background:linear-gradient(135deg,#4ade80,#06b6d4); display:flex; align-items:center; justify-content:center; font-size:1.4rem; box-shadow:0 4px 12px rgba(74,222,128,.3); }
+.logo-text { font-size:1.05rem; font-weight:700; }
+.logo-place { font-size:.68rem; color:var(--sub); font-weight:400; }
+.header-right { display:flex; align-items:center; gap:8px; }
+.live-tag { display:flex; align-items:center; gap:6px; font-size:.72rem; font-weight:600; color:var(--good); background:var(--good-bg); padding:5px 12px; border-radius:99px; transition:background .3s; }
+.dot { width:7px; height:7px; border-radius:50%; background:var(--good); animation:blink 2s infinite; }
+.dm-btn { width:36px; height:36px; border-radius:11px; background:var(--raised); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1rem; transition:background .2s,transform .2s; flex-shrink:0; }
+.dm-btn:hover { transform:rotate(15deg); }
+
+/* ── Device tabs ── */
+.device-tabs { display:flex; gap:6px; margin-bottom:8px; overflow-x:auto; padding-bottom:2px; }
+.device-tabs::-webkit-scrollbar { display:none; }
+.dev-tab { flex-shrink:0; padding:6px 14px; border-radius:99px; border:1.5px solid var(--border); background:var(--white); font-size:.72rem; font-weight:700; color:var(--sub); cursor:pointer; font-family:'Prompt',sans-serif; transition:background .2s,color .2s,border-color .2s; white-space:nowrap; }
+.dev-tab.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+.dev-tab[data-device="device2"].active { background:#db2777; border-color:#db2777; }
+.dev-tab[data-device="device3"].active { background:#d97706; border-color:#d97706; }
+
+/* ── Hero ── */
+.hero { background:var(--white); border-radius:28px; border:2.5px solid var(--current-ring); padding:22px 20px 16px; text-align:center; margin-bottom:10px; transition:border-color .6s,background .3s; position:relative; overflow:hidden; cursor:pointer; }
+.hero::before { content:''; position:absolute; inset:0; background:var(--current-bg); opacity:.25; transition:opacity .6s,background .6s; pointer-events:none; }
+.hero-tap { position:absolute; top:12px; right:14px; font-size:.67rem; font-weight:600; color:var(--current-c); opacity:.6; display:flex; align-items:center; gap:5px; transition:color .6s; z-index:2; }
+.face-ring { width:100px; height:100px; border-radius:50%; background:var(--current-bg); border:4px solid var(--current-ring); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:3.2rem; transition:background .6s,border-color .6s; position:relative; z-index:1; animation:float 3s ease-in-out infinite; }
+.status-label { font-size:1.65rem; font-weight:800; color:var(--current-c); transition:color .6s; margin-bottom:2px; position:relative; z-index:1; }
+.status-desc { font-size:.82rem; color:var(--sub); max-width:280px; margin:0 auto 14px; line-height:1.5; position:relative; z-index:1; }
+.pm-row { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:4px; position:relative; z-index:1; }
+.pm-num { font-family:'DM Mono',monospace; font-size:4.2rem; font-weight:500; line-height:1; color:var(--current-c); transition:color .6s; }
+.pm-meta { text-align:left; }
+.pm-name { font-size:.7rem; font-weight:600; color:var(--sub); }
+.pm-unit { font-size:.72rem; color:var(--sub); }
+.updated { font-size:.67rem; color:var(--sub); position:relative; z-index:1; }
+
+/* ── Stats Strip ── */
+.stats-strip { display:grid; grid-template-columns:repeat(4,1fr); background:var(--white); border-radius:18px; border:1px solid var(--border); margin-bottom:10px; overflow:hidden; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.stat-item { padding:12px 8px; text-align:center; border-right:1px solid var(--border); }
+.stat-item:last-child { border-right:none; }
+.stat-label { font-size:.6rem; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.6px; margin-bottom:4px; }
+.stat-val { font-family:'DM Mono',monospace; font-size:1rem; font-weight:500; color:var(--text); }
+.stat-delta-up { color:#dc2626; } .stat-delta-dn { color:#16a34a; }
+
+/* ── Gauge ── */
+.gauge-wrap { background:var(--white); border-radius:20px; border:1px solid var(--border); padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.gauge-title { font-size:.76rem; font-weight:600; color:var(--sub); margin-bottom:11px; }
+.gauge-bar-bg { height:14px; border-radius:99px; background:linear-gradient(to right,#16a34a 0%,#65a30d 25%,#d97706 45%,#dc2626 68%,#7c2d12 100%); position:relative; margin-bottom:9px; }
+.gauge-pointer { position:absolute; top:-8px; width:30px; height:30px; background:var(--white); border:3px solid var(--current-c); border-radius:50%; transform:translateX(-50%); transition:left .8s cubic-bezier(.34,1.56,.64,1),border-color .6s,background .3s; display:flex; align-items:center; justify-content:center; font-size:.75rem; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+.gauge-labels { display:flex; justify-content:space-between; font-size:.63rem; color:var(--sub); font-weight:500; }
+.legend { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+.leg-item { display:flex; align-items:center; gap:4px; font-size:.65rem; color:var(--sub); font-weight:500; }
+.leg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* ── AI Prediction card ── */
+.predict-card { background:var(--white); border:1.5px solid var(--blue); border-radius:20px; padding:14px 16px 12px; margin-bottom:10px; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.predict-header { display:flex; align-items:center; gap:8px; margin-bottom:11px; }
+.predict-icon { font-size:1.1rem; }
+.predict-title { font-size:.8rem; font-weight:700; color:var(--blue); flex:1; }
+.predict-badge { font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:99px; background:var(--raised); color:var(--sub); border:1px solid var(--border); }
+.pred-vals { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+.pred-val-item { background:var(--raised); border-radius:12px; padding:10px 8px; text-align:center; border:1px solid var(--border); }
+.pred-val-num { font-family:'DM Mono',monospace; font-size:1.45rem; font-weight:500; color:var(--blue); }
+.pred-val-label { font-size:.6rem; color:var(--sub); font-weight:600; margin-top:2px; line-height:1.3; }
+.conf-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.conf-label { font-size:.65rem; color:var(--sub); font-weight:600; white-space:nowrap; }
+.conf-bar-bg { flex:1; height:8px; border-radius:99px; background:var(--border); overflow:hidden; }
+.conf-bar { height:100%; border-radius:99px; background:linear-gradient(to right,#4f87ff,#0dbcb9); transition:width .8s cubic-bezier(.34,1.56,.64,1); }
+.conf-pct { font-family:'DM Mono',monospace; font-size:.72rem; font-weight:600; color:var(--blue); white-space:nowrap; min-width:36px; text-align:right; }
+.pred-footer { display:flex; justify-content:space-between; font-size:.63rem; color:var(--sub); }
+.pred-nodata { text-align:center; padding:12px; font-size:.75rem; color:var(--sub); }
+
+/* ── Per-device predict breakdown ── */
+.pred-devices { display:flex; flex-direction:column; gap:5px; margin-top:8px; }
+.pred-dev-row { display:flex; align-items:center; gap:8px; font-size:.7rem; }
+.pred-dev-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.pred-dev-name { font-weight:600; min-width:42px; }
+.pred-dev-vals { font-family:'DM Mono',monospace; color:var(--sub); flex:1; }
+.pred-dev-r2 { font-size:.62rem; color:var(--sub); }
+
+/* ── Tiles ── */
+.tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-bottom:10px; }
+.tile { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:14px 10px 10px; text-align:center; cursor:pointer; transition:transform .2s,box-shadow .2s,background .3s,border-color .3s; position:relative; }
+.tile:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+.tile-tap { position:absolute; bottom:7px; right:10px; font-size:.58rem; color:var(--blue); opacity:.5; font-weight:600; }
+.tile-emoji { font-size:1.4rem; margin-bottom:5px; }
+.tile-val { font-family:'DM Mono',monospace; font-size:1.25rem; font-weight:500; color:var(--text); }
+.tile-label { font-size:.63rem; color:var(--sub); margin-top:3px; font-weight:500; }
+
+/* ── Advice ── */
+.advice-card { background:var(--current-bg); border:1.5px solid var(--current-ring); border-radius:20px; padding:14px 16px 12px; transition:background .6s,border-color .6s; margin-bottom:10px; }
+.advice-header { display:flex; align-items:center; gap:8px; margin-bottom:9px; }
+.advice-icon { font-size:1.1rem; }
+.advice-title { font-size:.8rem; font-weight:700; color:var(--current-c); transition:color .6s; }
+.advice-list { list-style:none; display:flex; flex-direction:column; gap:6px; }
+.advice-list li { display:flex; align-items:flex-start; gap:8px; font-size:.78rem; color:var(--text); line-height:1.45; }
+.advice-list li::before { content:'✓'; font-weight:700; color:var(--current-c); flex-shrink:0; margin-top:1px; transition:color .6s; }
+
+/* ── Chart card ── */
+.chart-card { background:var(--white); border:1px solid var(--border); border-radius:20px; padding:14px 16px 12px; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.chart-title { font-size:.76rem; font-weight:600; color:var(--sub); margin-bottom:11px; }
+.chart-wrap { height:100px; }
+
+/* ── Export btn ── */
+.export-btn { background:var(--raised); border:1px solid var(--border); border-radius:12px; padding:6px 14px; font-size:.7rem; font-weight:600; color:var(--sub); cursor:pointer; font-family:'Prompt',sans-serif; transition:background .15s; display:inline-flex; align-items:center; gap:5px; }
+.export-btn:hover { background:var(--border); }
+
+/* ── More btn ── */
+.more-btn { width:100%; background:var(--white); border:1px solid var(--border); border-radius:16px; padding:12px; font-size:.82rem; font-weight:600; color:var(--blue); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:background .2s,box-shadow .2s,border-color .3s; margin-bottom:10px; font-family:'Prompt',sans-serif; }
+.more-btn:hover { background:var(--raised); box-shadow:var(--shadow); }
+
+/* ── Settings ── */
+.settings-section { margin-bottom:16px; }
+.settings-card { background:var(--white); border:1px solid var(--border); border-radius:20px; padding:18px 18px 14px; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.settings-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--sub); margin-bottom:14px; display:flex; align-items:center; gap:7px; }
+.setting-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+.setting-row:last-child { border-bottom:none; }
+.setting-info { flex:1; }
+.setting-name { font-size:.82rem; font-weight:600; }
+.setting-desc { font-size:.68rem; color:var(--sub); margin-top:2px; }
+.toggle { position:relative; display:inline-block; width:44px; height:24px; }
+.toggle input { opacity:0; width:0; height:0; }
+.slider { position:absolute; cursor:pointer; inset:0; background:var(--border); border-radius:99px; transition:background .3s; }
+.slider:before { content:''; position:absolute; width:18px; height:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:transform .3s; }
+input:checked + .slider { background:var(--blue); }
+input:checked + .slider:before { transform:translateX(20px); }
+.thresh-row { padding:10px 0; }
+.thresh-row-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+.thresh-val-display { font-family:'DM Mono',monospace; font-size:1.1rem; font-weight:600; color:var(--current-c); transition:color .6s; }
+input[type=range] { width:100%; height:6px; border-radius:99px; outline:none; cursor:pointer; appearance:none; background:linear-gradient(to right,var(--current-c) 0%,var(--current-c) var(--pct,30%),var(--border) var(--pct,30%),var(--border) 100%); }
+input[type=range]::-webkit-slider-thumb { appearance:none; width:20px; height:20px; background:var(--white); border:3px solid var(--current-c); border-radius:50%; box-shadow:var(--shadow); }
+
+/* ── Alert toast ── */
+.alert-toast { position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-120px); z-index:3000; background:#dc2626; color:#fff; border-radius:16px; padding:12px 18px; display:flex; align-items:center; gap:10px; box-shadow:0 8px 32px rgba(220,38,38,.45); transition:transform .4s cubic-bezier(.34,1.56,.64,1); max-width:calc(100vw - 32px); font-size:.82rem; font-weight:600; }
+.alert-toast.show { transform:translateX(-50%) translateY(0); }
+.alert-close { background:rgba(255,255,255,.25); border:none; color:#fff; border-radius:99px; width:22px; height:22px; cursor:pointer; font-size:.7rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* ── Bottom nav ── */
+.bottom-nav { position:fixed; bottom:0; left:0; right:0; height:var(--nav-h); background:var(--nav-bg); border-top:1px solid var(--border); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); display:flex; z-index:200; padding-bottom:env(safe-area-inset-bottom,0); transition:background .3s,border-color .3s; }
+.nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:none; border:none; cursor:pointer; padding:8px 4px 6px; font-family:'Prompt',sans-serif; transition:transform .15s; -webkit-tap-highlight-color:transparent; }
+.nav-item:active { transform:scale(.9); }
+.nav-emoji { font-size:1.35rem; line-height:1; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
+.nav-item.active .nav-emoji { transform:translateY(-3px) scale(1.15); }
+.nav-label { font-size:.6rem; font-weight:600; color:var(--sub); transition:color .2s; }
+.nav-item.active .nav-label { color:var(--blue); }
+.nav-pip { width:5px; height:5px; border-radius:50%; background:var(--blue); opacity:0; transition:opacity .2s; }
+.nav-item.active .nav-pip { opacity:1; }
+
+/* ── Modal ── */
+.overlay { position:fixed; inset:0; z-index:1000; background:rgba(15,23,42,.5); backdrop-filter:blur(8px); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; padding:0; }
+.overlay.open { opacity:1; pointer-events:all; }
+@media(min-width:480px){ .overlay{ align-items:center; padding:16px; } }
+.modal { background:var(--white); width:100%; max-width:680px; max-height:92vh; overflow-y:auto; border-radius:28px 28px 0 0; transform:translateY(40px); transition:transform .35s cubic-bezier(.16,1,.3,1),background .3s; padding:0; }
+@media(min-width:480px){ .modal{ border-radius:28px; transform:translateY(20px) scale(.97); } }
+.overlay.open .modal { transform:none; }
+.modal::-webkit-scrollbar{ width:4px; } .modal::-webkit-scrollbar-thumb{ background:var(--border); border-radius:99px; }
+.modal-drag { width:40px; height:4px; background:var(--border); border-radius:99px; margin:12px auto 0; }
+@media(min-width:480px){ .modal-drag{ display:none; } }
+.modal-head { display:flex; align-items:flex-start; justify-content:space-between; padding:18px 20px 14px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--white); z-index:10; border-radius:28px 28px 0 0; transition:background .3s,border-color .3s; }
+.modal-title { font-size:1.05rem; font-weight:800; }
+.modal-sub { font-size:.7rem; color:var(--sub); margin-top:2px; }
+.modal-close { width:32px; height:32px; border-radius:10px; background:var(--raised); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:.8rem; color:var(--sub); flex-shrink:0; transition:background .15s,color .15s,border-color .3s; }
+.modal-close:hover { background:#fee2e2; color:var(--rose); border-color:#fca5a5; }
+.modal-body { padding:18px 20px 26px; }
+.msec { margin-bottom:20px; }
+.msec-title { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--sub); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.mfield-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:9px; }
+.mfield-card { background:var(--raised); border:1px solid var(--border); border-radius:13px; padding:12px 12px 9px; position:relative; overflow:hidden; transition:background .3s,border-color .3s; }
+.mfield-bar { position:absolute; top:0; left:0; right:0; height:3px; border-radius:13px 13px 0 0; }
+.mfield-icon { font-size:1rem; margin-bottom:3px; }
+.mfield-name { font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--sub); margin-bottom:3px; }
+.mfield-val { font-family:'DM Mono',monospace; font-size:1.35rem; font-weight:500; }
+.mfield-unit { font-size:.58rem; color:var(--sub); margin-top:1px; }
+.mfield-delta { font-size:.65rem; font-weight:700; margin-top:2px; }
+.mfield-spark { margin-top:7px; height:30px; }
+.mfield-spark canvas { width:100%!important; height:30px!important; }
+.mchart-wrap { height:170px; }
+.mtable-wrap { overflow-x:auto; border-radius:13px; border:1px solid var(--border); transition:border-color .3s; }
+.mtable { width:100%; border-collapse:collapse; font-size:.76rem; }
+.mtable th { text-align:left; padding:8px 10px; font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--sub); border-bottom:2px solid var(--border); position:sticky; top:0; background:var(--white); transition:background .3s,border-color .3s; }
+.mtable td { padding:8px 10px; border-bottom:1px solid var(--border); transition:border-color .3s; }
+.mtable tr:last-child td { border-bottom:none; }
+.mtable tr:hover td { background:var(--raised); }
+.mtable td:first-child { font-family:'DM Mono',monospace; color:var(--sub); font-size:.68rem; }
+.td-val { font-family:'DM Mono',monospace; font-weight:600; }
+.dev-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.dev-tag { display:inline-flex; align-items:center; gap:6px; border-radius:99px; padding:4px 13px; font-size:.7rem; font-weight:700; }
+.dev-ts { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--sub); }
+.dev-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }
+.hc-card { background:var(--raised); border:1px solid var(--border); border-radius:14px; padding:14px 14px 10px; transition:background .3s,border-color .3s; }
+.hc-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+.hc-name { font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--sub); margin-bottom:3px; }
+.hc-val { font-family:'DM Mono',monospace; font-size:1.45rem; font-weight:500; }
+.hc-stats { text-align:right; font-family:'DM Mono',monospace; font-size:.6rem; color:var(--sub); line-height:1.7; }
+.hc-chart { height:66px; }
+.wdetail-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:9px; }
+
+/* ── 3D twin ── */
+.twin-card { background:var(--white); border-radius:20px; border:1px solid var(--border); overflow:hidden; margin-bottom:10px; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.twin-header { padding:14px 16px 8px; }
+.twin-viewer { width:100%; height:280px; background:var(--raised); }
+.twin-btns { padding:10px 14px 12px; display:flex; gap:8px; overflow-x:auto; }
+.twin-btn { background:var(--raised); border:1px solid var(--border); border-radius:12px; padding:6px 14px; font-size:.7rem; font-weight:600; color:var(--blue); cursor:pointer; white-space:nowrap; font-family:'Prompt',sans-serif; transition:background .15s; }
+.twin-btn:hover { background:var(--border); }
+.twin-btn.ene  { background:#e0f2fe; color:#0284c7; border-color:#bae6fd; }
+.twin-btn.dev2 { background:#fce7f3; color:#db2777; border-color:#fbcfe8; }
+.twin-btn.dev3 { background:#fef3c7; color:#d97706; border-color:#fcd34d; }
+[data-theme="dark"] .twin-btn.ene  { background:#0c2e4a; color:#38bdf8; border-color:#0369a1; }
+[data-theme="dark"] .twin-btn.dev2 { background:#3d0020; color:#f472b6; border-color:#9d174d; }
+[data-theme="dark"] .twin-btn.dev3 { background:#3d2500; color:#fbbf24; border-color:#92400e; }
+
+.Hotspot { background:var(--blue); border-radius:50%; border:2px solid white; width:16px; height:16px; box-shadow:0 2px 8px rgba(0,0,0,.3); cursor:pointer; transition:transform .2s; }
+.Hotspot:hover { transform:scale(1.3); }
+.HotspotAnnotation { background:var(--white); border-radius:6px; box-shadow:var(--shadow); color:var(--text); font-family:'Prompt',sans-serif; font-size:.65rem; font-weight:700; padding:4px 10px; position:absolute; top:22px; left:50%; transform:translateX(-50%); white-space:nowrap; border:1px solid var(--border); }
+
+/* ── Responsive desktop 2-col ── */
+@media(min-width:768px){
+  .page { max-width:1100px; padding:20px 20px; }
+  .home-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
+  .home-col-left > * { margin-bottom:10px; }
+  .home-col-right > * { margin-bottom:10px; }
+  .home-col-left > *:last-child, .home-col-right > *:last-child { margin-bottom:0; }
+  .twin-viewer { height:380px; }
+}
+
+/* Animations */
+@keyframes blink  { 0%,100%{opacity:1}50%{opacity:.3} }
+@keyframes float  { 0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none} }
+.fade { animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both; }
+.loading { display:flex; align-items:center; justify-content:center; gap:6px; padding:24px; font-size:1.2rem; }
+@keyframes bob { 0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)} }
+.loading span { animation:bob .7s ease-in-out infinite; }
+.loading span:nth-child(2) { animation-delay:.15s; }
+.loading span:nth-child(3) { animation-delay:.3s; }
+.section-head { font-size:.78rem; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; margin-top:4px; }
+</style>
+</head>
+<body>
+
+<!-- ── Connection error banner ── -->
+<div class="error-banner" id="error-banner">
+  <span>⚠️ ไม่สามารถรับข้อมูลจาก Firebase — ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</span>
+  <button class="error-retry" onclick="location.reload()">ลองใหม่</button>
+</div>
+
+<div class="alert-toast" id="alert-toast">
+  <span>⚠️</span>
+  <span id="alert-text">PM2.5 เกินค่าที่ตั้งไว้!</span>
+  <button class="alert-close" onclick="dismissAlert()">✕</button>
+</div>
+
+<div class="page">
+
+  <div class="header fade" style="animation-delay:.04s">
+    <div class="logo">
+      <div class="logo-icon">🌿</div>
+      <div>
+        <div class="logo-text">SmartAir</div>
+        <div class="logo-place">มจธ. บางมด · กรุงเทพฯ</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-tag"><div class="dot"></div>ข้อมูลสด</div>
+      <button class="dm-btn" id="dm-toggle" title="สลับ Dark / Light">🌙</button>
+    </div>
+  </div>
+
+  <!-- ── Tab: หน้าหลัก ── -->
+  <section class="tab-section active" id="tab-home">
+
+    <!-- Device selector -->
+    <div class="device-tabs fade" style="animation-delay:.06s">
+      <button class="dev-tab active" data-device="device1">📡 S12 (Device 1)</button>
+      <button class="dev-tab" data-device="device2">📡 SCL (Device 2)</button>
+      <button class="dev-tab" data-device="device3">📡 S14 (Device 3)</button>
+    </div>
+
+    <div class="home-grid">
+      <div class="home-col-left">
+        <div class="hero fade" id="hero-card" style="animation-delay:.08s">
+          <div class="hero-tap"><i class="fas fa-chart-line"></i> แตะดูรายละเอียด</div>
+          <div class="face-ring" id="face">⏳</div>
+          <div class="status-label" id="status-label">กำลังโหลด...</div>
+          <div class="status-desc" id="status-desc">รอรับข้อมูลจากเซนเซอร์</div>
+          <div class="pm-row">
+            <div class="pm-num" id="pm-num">--</div>
+            <div class="pm-meta"><div class="pm-name">PM2.5</div><div class="pm-unit">µg/m³</div></div>
+          </div>
+          <div class="updated">อัปเดตล่าสุด: <span id="last-time">--</span></div>
+        </div>
+
+        <div class="stats-strip fade" id="stats-strip" style="animation-delay:.10s">
+          <div class="stat-item"><div class="stat-label">สูงสุด</div><div class="stat-val" id="stat-max">--</div></div>
+          <div class="stat-item"><div class="stat-label">เฉลี่ย</div><div class="stat-val" id="stat-avg">--</div></div>
+          <div class="stat-item"><div class="stat-label">ต่ำสุด</div><div class="stat-val" id="stat-min">--</div></div>
+          <div class="stat-item"><div class="stat-label">เทียบก่อนหน้า</div><div class="stat-val" id="stat-delta">--</div></div>
+        </div>
+
+        <div class="gauge-wrap fade" style="animation-delay:.12s">
+          <div class="gauge-title">📊 ระดับ PM2.5 อยู่ที่ไหน?</div>
+          <div class="gauge-bar-bg"><div class="gauge-pointer" id="gauge-ptr">📍</div></div>
+          <div class="gauge-labels"><span>0 ดีมาก</span><span>25</span><span>50</span><span>100</span><span>&gt;150 อันตราย</span></div>
+          <div class="legend">
+            <div class="leg-item"><div class="leg-dot" style="background:#16a34a"></div>ดี (0–25)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#65a30d"></div>ปานกลาง (26–37)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#d97706"></div>เริ่มมีผล (38–50)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#dc2626"></div>ไม่ดี (51–90)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#7c2d12"></div>อันตราย (&gt;90)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-col-right">
+        <div class="advice-card fade" id="advice-card" style="animation-delay:.16s">
+          <div class="advice-header"><div class="advice-icon">💡</div><div class="advice-title" id="advice-title">คำแนะนำ</div></div>
+          <ul class="advice-list" id="advice-list"><li>กำลังประมวลผล...</li></ul>
+        </div>
+
+        <!-- AI Prediction card -->
+        <div class="predict-card fade" id="predict-card" style="animation-delay:.18s">
+          <div class="predict-header">
+            <div class="predict-icon">🤖</div>
+            <div class="predict-title">AI ทำนาย (อีก 10 นาที)</div>
+            <div class="predict-badge" id="pred-aqi-badge">--</div>
+          </div>
+          <div id="pred-body">
+            <div class="pred-nodata">รอข้อมูลจาก AI... <br><span style="font-size:.68rem">กรุณารัน ai.py</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Tab: สถิติ ── -->
+  <section class="tab-section" id="tab-stats">
+    <div class="section-head">📈 ประวัติ & สถิติ</div>
+
+    <div class="chart-card fade" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+        <div class="chart-title" style="margin:0">📈 แนวโน้ม PM2.5 (20 จุดล่าสุด)</div>
+        <button class="export-btn" id="btn-export-csv"><i class="fas fa-download"></i> CSV</button>
+      </div>
+      <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+    </div>
+
+    <div class="chart-card fade" style="margin-bottom:10px">
+      <div class="chart-title">🤖 ประวัติการทำนาย AI — PM2.5 (20 ครั้งล่าสุด)</div>
+      <div style="height:120px;position:relative">
+        <canvas id="predict-hist-chart"></canvas>
+        <div id="pred-hist-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--sub)">รอข้อมูลจาก AI...</div>
+      </div>
+    </div>
+
+    <button class="more-btn fade" id="btn-allfields">
+      <i class="fas fa-microchip"></i> ดูค่าทั้งหมดจากเซนเซอร์ (ทุก device)
+    </button>
+
+    <!-- 3D Digital Twin -->
+    <div class="twin-card fade">
+      <div class="twin-header">
+        <div class="chart-title" style="margin:0">🗺️ จุดติดตั้งเซนเซอร์ (Digital Twin)</div>
+      </div>
+      <div class="twin-viewer">
+        <model-viewer id="kmutt-model"
+          src="models/kmutt-draft.glb"
+          camera-controls auto-rotate
+          shadow-intensity="1"
+          style="width:100%;height:100%">
+
+          <button class="Hotspot" slot="hotspot-ene"
+            data-position="-363.92m 223.88m -972.39m"
+            data-normal="0m 1m 0m">
+            <div class="HotspotAnnotation">
+              S12 Sensor<br>
+              <span style="font-size:1.15rem;font-weight:800" id="hs-ene-pm">--</span>
+              <span style="font-size:.65rem;color:var(--sub)">µg/m³</span>
+            </div>
+          </button>
+
+          <button class="Hotspot" slot="hotspot-dev2"
+            data-position="428.23m 161.45m -425.44m"
+            data-normal="0m 1m 0m"
+            style="background:#db2777">
+            <div class="HotspotAnnotation">
+              SCL Sensor<br>
+              <span style="font-size:1.15rem;font-weight:800" id="hs-dev2-pm">--</span>
+              <span style="font-size:.65rem;color:var(--sub)">µg/m³</span>
+            </div>
+          </button>
+
+          <button class="Hotspot" slot="hotspot-dev3"
+            data-position="-42.32m 131.21m -1172.63m"
+            data-normal="0m 1m 0m"
+            style="background:#d97706">
+            <div class="HotspotAnnotation">
+              S14 Sensor<br>
+              <span style="font-size:1.15rem;font-weight:800" id="hs-dev3-pm">--</span>
+              <span style="font-size:.65rem;color:var(--sub)">µg/m³</span>
+            </div>
+          </button>
+
+        </model-viewer>
+      </div>
+      <div class="twin-btns">
+        <button class="twin-btn" id="btn-cam-reset">📍 มุมมองเริ่มต้น</button>
+        <button class="twin-btn ene"  id="btn-cam-ene">📡 S12</button>
+        <button class="twin-btn dev2" id="btn-cam-dev2">📡 SCL</button>
+        <button class="twin-btn dev3" id="btn-cam-dev3">📡 S14</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Tab: อากาศ ── -->
+  <section class="tab-section" id="tab-weather">
+    <div class="section-head">⛅ สภาพอากาศ</div>
+    <div class="tiles" style="margin-bottom:10px">
+      <div class="tile" id="tile-weather"><div class="tile-emoji">🌡️</div><div class="tile-val" id="w-temp">--</div><div class="tile-label">อุณหภูมิ (°C)</div><div class="tile-tap">แตะดู ›</div></div>
+      <div class="tile" id="tile-hum"><div class="tile-emoji">💧</div><div class="tile-val" id="w-hum">--</div><div class="tile-label">ความชื้น (%)</div><div class="tile-tap">แตะดู ›</div></div>
+      <div class="tile" id="tile-wind"><div class="tile-emoji">🍃</div><div class="tile-val" id="w-wind">--</div><div class="tile-label">ลม (m/s)</div><div class="tile-tap">แตะดู ›</div></div>
+    </div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-title">📈 อุณหภูมิ & ความชื้น (ประวัติ)</div>
+      <div style="height:160px"><canvas id="weather-inline-chart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🗂 ตารางประวัติอากาศ</div>
+      <div class="mtable-wrap" style="max-height:280px;overflow-y:auto">
+        <table class="mtable">
+          <thead><tr><th>เวลา</th><th>🌡°C</th><th>💧%</th><th>💨m/s</th><th>☁️%</th><th>สภาพ</th></tr></thead>
+          <tbody id="w-inline-tbody"><tr><td colspan="6" style="text-align:center;padding:18px;color:var(--sub)">รอข้อมูล...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Tab: ตั้งค่า ── -->
+  <section class="tab-section" id="tab-settings">
+    <div class="section-head">⚙️ ตั้งค่า</div>
+    <div class="settings-section">
+      <div class="settings-card">
+        <div class="settings-title">🔔 การแจ้งเตือน</div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-name">เปิดการแจ้งเตือน</div><div class="setting-desc">แจ้งเตือนเมื่อ PM2.5 เกินค่าที่กำหนด</div></div>
+          <label class="toggle"><input type="checkbox" id="alert-enabled" checked><span class="slider"></span></label>
+        </div>
+        <div class="thresh-row">
+          <div class="thresh-row-top">
+            <div style="font-size:.82rem;font-weight:600">ค่า PM2.5 ที่แจ้งเตือน</div>
+            <div class="thresh-val-display"><span id="thresh-display">50</span> µg/m³</div>
+          </div>
+          <input type="range" id="thresh-slider" min="10" max="150" value="50" step="5">
+          <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--sub);margin-top:5px"><span>10</span><span>50</span><span>100</span><span>150</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-card">
+        <div class="settings-title">🎨 การแสดงผล</div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-name">Dark Mode</div><div class="setting-desc">เปลี่ยนธีมเป็นโหมดมืด</div></div>
+          <label class="toggle"><input type="checkbox" id="dm-toggle-settings"><span class="slider"></span></label>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-card">
+        <div class="settings-title">ℹ️ ข้อมูลระบบ</div>
+        <div class="setting-row" style="padding:8px 0">
+          <div class="setting-info"><div class="setting-name">แหล่งข้อมูลฝุ่น</div><div class="setting-desc">Firebase Realtime DB · sensor/device1,2,3/history</div></div>
+        </div>
+        <div class="setting-row" style="padding:8px 0">
+          <div class="setting-info"><div class="setting-name">แหล่งข้อมูล AI</div><div class="setting-desc">Firebase · /ai_analysis/prediction</div></div>
+        </div>
+        <div class="setting-row" style="padding:8px 0">
+          <div class="setting-info"><div class="setting-name">แหล่งข้อมูลอากาศ</div><div class="setting-desc">OpenWeatherMap · lat 13.65, lon 100.49</div></div>
+        </div>
+        <div class="setting-row" style="padding:8px 0;border-bottom:none">
+          <div class="setting-info"><div class="setting-name">เวอร์ชัน</div><div class="setting-desc">SmartAir v3.0 · KMUTT · 3 sensors · AI prediction</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- .page -->
+
+<nav class="bottom-nav">
+  <button class="nav-item active" data-tab="home"><div class="nav-emoji">🏠</div><div class="nav-label">หน้าหลัก</div><div class="nav-pip"></div></button>
+  <button class="nav-item" data-tab="stats"><div class="nav-emoji">📊</div><div class="nav-label">สถิติ</div><div class="nav-pip"></div></button>
+  <button class="nav-item" data-tab="weather"><div class="nav-emoji">⛅</div><div class="nav-label">อากาศ</div><div class="nav-pip"></div></button>
+  <button class="nav-item" data-tab="settings"><div class="nav-emoji">⚙️</div><div class="nav-label">ตั้งค่า</div><div class="nav-pip"></div></button>
+</nav>
+
+<!-- ── Modals ── -->
+<div class="overlay" id="modal-pm">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-head">
+      <div><div class="modal-title">💨 รายละเอียด PM2.5</div><div class="modal-sub" id="modal-pm-sub">ประวัติ 50 จุดล่าสุด · Firebase Realtime</div></div>
+      <div class="modal-close" onclick="closeModal('modal-pm')"><i class="fas fa-times"></i></div>
+    </div>
+    <div class="modal-body">
+      <div class="msec"><div class="msec-title">📈 แนวโน้ม PM2.5</div><div class="mchart-wrap"><canvas id="m-pm-chart"></canvas></div></div>
+      <div class="msec"><div class="msec-title">🗂 ตารางข้อมูลดิบ</div><div class="mtable-wrap"><table class="mtable"><thead><tr id="pm-thead"></tr></thead><tbody id="pm-tbody"></tbody></table></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-fields">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-head">
+      <div><div class="modal-title">📡 ค่าทั้งหมดจากเซนเซอร์</div><div class="modal-sub">ข้อมูลล่าสุด · ประวัติแยกตามอุปกรณ์</div></div>
+      <div class="modal-close" onclick="closeModal('modal-fields')"><i class="fas fa-times"></i></div>
+    </div>
+    <div class="modal-body">
+      <div class="msec"><div class="msec-title">📊 ค่าล่าสุดทุก field</div><div class="mfield-grid" id="mf-grid"><div class="loading"><span>📡</span><span>📊</span><span>✨</span></div></div></div>
+      <div class="msec"><div class="msec-title">🔬 ประวัติแยกตามอุปกรณ์</div><div id="dev-wrap"><div class="loading"><span>📱</span><span>📈</span><span>💫</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-weather">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-head">
+      <div><div class="modal-title">⛅ สภาพอากาศ</div><div class="modal-sub">มจธ. บางมด · OpenWeatherMap</div></div>
+      <div class="modal-close" onclick="closeModal('modal-weather')"><i class="fas fa-times"></i></div>
+    </div>
+    <div class="modal-body">
+      <div class="msec"><div class="msec-title">🌡 ข้อมูลล่าสุด</div><div class="wdetail-grid" id="w-detail-grid"></div></div>
+      <div class="msec"><div class="msec-title">📈 อุณหภูมิ & ความชื้น</div><div class="mchart-wrap"><canvas id="m-weather-chart"></canvas></div></div>
+      <div class="msec"><div class="msec-title">🗂 ตารางประวัติ</div><div class="mtable-wrap"><table class="mtable"><thead><tr><th>เวลา</th><th>🌡°C</th><th>💧%</th><th>💨m/s</th><th>🌧mm</th><th>☁️%</th><th>สภาพ</th></tr></thead><tbody id="w-hist-tbody"></tbody></table></div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { getDatabase, ref, onValue, query, limitToLast }
+  from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+/* ── Config ── */
+const FB = {
+  apiKey:"AIzaSyD7XRurlob8sY6resrbTNKFZ0Il2ROSba4",
+  authDomain:"test-70cc5.firebaseapp.com",
+  databaseURL:"https://test-70cc5-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"test-70cc5", storageBucket:"test-70cc5.firebasestorage.app",
+  messagingSenderId:"647512106508",
+  appId:"1:647512106508:web:1d9576385a768bac74b029"
+};
+const OWM_KEY = "59189cf1cdebec85d5066055198ea3aa";
+const LAT = 13.6512, LON = 100.4964;
+const fbDb = getDatabase(initializeApp(FB));
+
+/* ── Device metadata ── */
+const DEVICE_INFO = {
+  device1: { name:'S12',  color:'#4f87ff', hotspot:'hotspot-ene',  hsId:'hs-ene-pm'  },
+  device2: { name:'SCL',  color:'#db2777', hotspot:'hotspot-dev2', hsId:'hs-dev2-pm' },
+  device3: { name:'S14',  color:'#d97706', hotspot:'hotspot-dev3', hsId:'hs-dev3-pm' },
+};
+
+/* ── Sensor meta ── */
+const META = {
+  pm2_5:{name:'PM2.5',unit:'µg/m³',icon:'💨',color:'#4f87ff'},
+  pm10:{name:'PM10',unit:'µg/m³',icon:'🌫️',color:'#0dbcb9'},
+  pm1:{name:'PM1.0',unit:'µg/m³',icon:'🌫️',color:'#67e8f9'},
+  co2:{name:'CO₂',unit:'ppm',icon:'☁️',color:'#22c55e'},
+  co:{name:'CO',unit:'ppm',icon:'⚠️',color:'#f59e0b'},
+  temperature:{name:'อุณหภูมิ',unit:'°C',icon:'🌡️',color:'#f45b7a'},
+  temp:{name:'อุณหภูมิ',unit:'°C',icon:'🌡️',color:'#f45b7a'},
+  humidity:{name:'ความชื้น',unit:'%RH',icon:'💧',color:'#8b5cf6'},
+  pressure:{name:'ความดัน',unit:'hPa',icon:'🔵',color:'#f59e0b'},
+  voc:{name:'VOC',unit:'ppb',icon:'⚗️',color:'#ec4899'},
+  no2:{name:'NO₂',unit:'ppb',icon:'🏭',color:'#fb923c'},
+  o3:{name:'โอโซน',unit:'ppb',icon:'🌀',color:'#84cc16'},
+  aqi:{name:'AQI',unit:'',icon:'📊',color:'#8b5cf6'},
+  lux:{name:'แสง',unit:'lux',icon:'💡',color:'#f59e0b'},
+  noise:{name:'เสียง',unit:'dB',icon:'🔊',color:'#ec4899'},
+};
+const SKIP = new Set(['datetime','timestamp','date','time','id','key','device','device_id','deviceid']);
+function metaFor(k){
+  const kl = k.toLowerCase();
+  return META[kl]
+    || (Object.keys(META).find(mk => kl.includes(mk)) ? META[Object.keys(META).find(mk => kl.includes(mk))] : null)
+    || {name:k, unit:'', icon:'📡', color:'#94a3b8'};
+}
+
+/* ── Level config (มาตรฐาน PCD) ── */
+const LEVELS = [
+  {max:25,  face:'😊', label:'อากาศดีมาก',      desc:'อากาศสะอาด เหมาะสำหรับกิจกรรมกลางแจ้งทุกประเภท',
+   color:'#16a34a', bg:'var(--good-bg)', ring:'var(--good-ring)',
+   advice:['ออกกำลังกายกลางแจ้งได้ตามปกติ','เปิดหน้าต่างรับอากาศบริสุทธิ์ได้เลย','ไม่จำเป็นต้องใส่หน้ากาก']},
+  {max:37,  face:'🙂', label:'อากาศดี',          desc:'คุณภาพอากาศอยู่ในเกณฑ์ดี เหมาะกับกิจกรรมทั่วไป',
+   color:'#65a30d', bg:'#ecfccb', ring:'#bef264',
+   advice:['กิจกรรมกลางแจ้งทำได้ตามปกติ','ผู้ที่แพ้ฝุ่นอาจระวังเล็กน้อย','เปิดหน้าต่างได้ตามสะดวก']},
+  {max:50,  face:'😐', label:'เริ่มมีผลกระทบ',  desc:'เกินมาตรฐาน PCD (37.5 µg/m³) — กลุ่มเสี่ยงควรระวัง',
+   color:'#d97706', bg:'var(--mod-bg)', ring:'var(--mod-ring)',
+   advice:['กลุ่มเสี่ยงควรลดกิจกรรมกลางแจ้ง','หากรู้สึกระคายเคืองควรใส่หน้ากาก N95','ปิดหน้าต่างหากอยู่ในห้องแอร์']},
+  {max:90,  face:'😷', label:'ไม่ดีต่อสุขภาพ',  desc:'ทุกคนอาจได้รับผลกระทบ ควรระมัดระวังเป็นพิเศษ',
+   color:'#dc2626', bg:'var(--bad-bg)', ring:'var(--bad-ring)',
+   advice:['ควรอยู่ภายในอาคารให้มากที่สุด','ใส่หน้ากาก N95 ทุกครั้งที่ออกข้างนอก','หลีกเลี่ยงการออกกำลังกายกลางแจ้ง','ปิดหน้าต่างและประตูให้สนิท']},
+  {max:999, face:'🚨', label:'อันตราย',           desc:'ระดับอันตราย ควรหลีกเลี่ยงการออกนอกอาคารโดยไม่จำเป็น',
+   color:'#7c2d12', bg:'#fef2f2', ring:'#fca5a5',
+   advice:['อย่าออกนอกอาคารโดยไม่จำเป็น','ใส่หน้ากาก N95 ตลอดเวลาหากต้องออก','ผู้ป่วยโรคหัวใจและปอดควรปรึกษาแพทย์']},
+];
+const getLevel = v => LEVELS.find(l => v <= l.max) || LEVELS[LEVELS.length - 1];
+function setColors(lv){
+  const r = document.documentElement.style;
+  r.setProperty('--current-c',  lv.color);
+  r.setProperty('--current-bg', lv.bg);
+  r.setProperty('--current-ring', lv.ring);
+}
+
+/* ── Dark mode ── */
+function isDark(){ return document.documentElement.getAttribute('data-theme') === 'dark'; }
+function setDark(on){
+  document.documentElement.setAttribute('data-theme', on ? 'dark' : 'light');
+  document.getElementById('dm-toggle').textContent = on ? '☀️' : '🌙';
+  document.getElementById('dm-toggle-settings').checked = on;
+  localStorage.setItem('smartair-dark', on ? '1' : '0');
+  updateChartsTheme();
+}
+document.getElementById('dm-toggle').addEventListener('click', () => setDark(!isDark()));
+document.getElementById('dm-toggle-settings').addEventListener('change', e => setDark(e.target.checked));
+if(localStorage.getItem('smartair-dark') === '1') setDark(true);
+
+/* ── Nav tabs ── */
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    if(tab === 'weather') renderWeatherInline();
+  });
+});
+
+/* ── Alert ── */
+let alertDismissed = false, alertThreshold = 50, alertEnabled = true, alertTimeout = null;
+const slider = document.getElementById('thresh-slider');
+function updateSliderFill(){
+  const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+  slider.style.setProperty('--pct', pct + '%');
+  document.getElementById('thresh-display').textContent = slider.value;
+  alertThreshold = parseInt(slider.value);
+}
+slider.addEventListener('input', () => { updateSliderFill(); alertDismissed = false; });
+updateSliderFill();
+document.getElementById('alert-enabled').addEventListener('change', e => {
+  alertEnabled = e.target.checked;
+  if(!alertEnabled) dismissAlert();
+});
+function tryAlert(pm){
+  if(!alertEnabled) return;
+  if(pm > alertThreshold && !alertDismissed){
+    document.getElementById('alert-text').textContent = `PM2.5 = ${pm.toFixed(1)} µg/m³ — เกินค่าที่ตั้งไว้ (${alertThreshold} µg/m³)`;
+    document.getElementById('alert-toast').classList.add('show');
+    if(alertTimeout) clearTimeout(alertTimeout);
+    alertTimeout = setTimeout(dismissAlert, 7000);
+  } else if(pm <= alertThreshold){
+    dismissAlert();
+    alertDismissed = false;
+  }
+}
+window.dismissAlert = function(){ document.getElementById('alert-toast').classList.remove('show'); alertDismissed = true; };
+
+/* ── Error / connection timeout ── */
+let _errorTimer = setTimeout(() => {
+  if(!_dataReceived) document.getElementById('error-banner').classList.add('show');
+}, 15000);
+let _dataReceived = false;
+function markDataReceived(){
+  if(!_dataReceived){
+    _dataReceived = true;
+    clearTimeout(_errorTimer);
+    document.getElementById('error-banner').classList.remove('show');
+  }
+}
+
+/* ── Hero update ── */
+function updateHero(pm, ts, allPm){
+  const lv = getLevel(pm);
+  setColors(lv);
+  document.getElementById('face').textContent = lv.face;
+  document.getElementById('status-label').textContent = lv.label;
+  document.getElementById('status-desc').textContent = lv.desc;
+  document.getElementById('pm-num').textContent = pm.toFixed(1);
+  document.getElementById('last-time').textContent = ts || '--';
+  const pct = Math.min(Math.max(pm / 150, 0), 1) * 100;
+  const ptr = document.getElementById('gauge-ptr');
+  ptr.style.left = pct + '%';
+  ptr.style.borderColor = lv.color;
+  document.getElementById('advice-title').textContent = '💡 คำแนะนำ';
+  document.getElementById('advice-list').innerHTML = lv.advice.map(a => `<li>${a}</li>`).join('');
+  if(allPm.length > 0){
+    const maxV = Math.max(...allPm), minV = Math.min(...allPm), avgV = allPm.reduce((a,b) => a+b, 0) / allPm.length;
+    const delta = allPm.length >= 2 ? pm - allPm[allPm.length - 2] : null;
+    document.getElementById('stat-max').textContent = maxV.toFixed(1);
+    document.getElementById('stat-avg').textContent = avgV.toFixed(1);
+    document.getElementById('stat-min').textContent = minV.toFixed(1);
+    const dEl = document.getElementById('stat-delta');
+    if(delta !== null){
+      dEl.textContent = (delta >= 0 ? '↑' : '↓') + Math.abs(delta).toFixed(1);
+      dEl.className = 'stat-val ' + (delta >= 0 ? 'stat-delta-up' : 'stat-delta-dn');
+    } else { dEl.textContent = '--'; }
+  }
+  tryAlert(pm);
+}
+
+/* ── Chart helpers ── */
+function gridColor(){ return isDark() ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.04)'; }
+function tickColor(){ return isDark() ? '#475569' : '#94a3b8'; }
+function makeGradient(ctx, color, h=170){
+  const g = ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0, color + '2a'); g.addColorStop(1, color + '00');
+  return g;
+}
+function lineChart(canvas, labels, data, color, h=170){
+  return new Chart(canvas, {type:'line', data:{labels, datasets:[{data, borderColor:color, backgroundColor:makeGradient(canvas.getContext('2d'),color,h), borderWidth:2.5, pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:color, pointBorderWidth:2.5, tension:.4, fill:true}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:isDark()?'#1a2540':'#fff', titleColor:isDark()?'#e2e8f0':'#1e293b', bodyColor:'#64748b', borderColor:color, borderWidth:1, padding:10}}, scales:{y:{grid:{color:gridColor()}, ticks:{color:tickColor(), font:{size:10, family:'DM Mono'}}}, x:{grid:{display:false}, ticks:{color:tickColor(), font:{size:9}, maxTicksLimit:10}}}}});
+}
+function sparkLine(canvas, data, color){
+  return new Chart(canvas, {type:'line', data:{labels:data.map((_,i)=>i), datasets:[{data, borderColor:color, backgroundColor:color+'22', borderWidth:1.8, pointRadius:0, tension:.4, fill:true}]},
+    options:{responsive:false, animation:false, plugins:{legend:{display:false}, tooltip:{enabled:false}}, scales:{x:{display:false}, y:{display:false, beginAtZero:false}}}});
+}
+function tinyHistChart(canvas, data, labels, color){
+  const g = canvas.getContext('2d').createLinearGradient(0,0,0,66);
+  g.addColorStop(0, color+'25'); g.addColorStop(1, color+'00');
+  return new Chart(canvas, {type:'line', data:{labels, datasets:[{data, borderColor:color, backgroundColor:g, borderWidth:2, pointRadius:0, tension:.4, fill:true}]},
+    options:{responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:isDark()?'#1a2540':'#fff', titleColor:isDark()?'#e2e8f0':'#1e293b', bodyColor:'#64748b', borderColor:color, borderWidth:1, padding:8}}, scales:{x:{display:false}, y:{display:false, beginAtZero:false}}}});
+}
+
+/* ── Trend chart ── */
+const tCtx = document.getElementById('trend-chart').getContext('2d');
+const trendChart = new Chart(tCtx, {type:'line',
+  data:{labels:[], datasets:[{label:'PM2.5', data:[], borderColor:'#4f87ff',
+    backgroundColor:(()=>{ const g=tCtx.createLinearGradient(0,0,0,100); g.addColorStop(0,'rgba(79,135,255,.18)'); g.addColorStop(1,'rgba(79,135,255,0)'); return g; })(),
+    borderWidth:2.5, pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:'#4f87ff', pointBorderWidth:2.5, tension:.4, fill:true}]},
+  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:'#fff', titleColor:'#1e293b', bodyColor:'#64748b', borderColor:'#4f87ff', borderWidth:1, padding:10, callbacks:{label:c=>`PM2.5: ${c.parsed.y} µg/m³`}}},
+    scales:{y:{grid:{color:gridColor()}, ticks:{color:tickColor(), font:{size:10, family:'DM Mono'}}}, x:{grid:{display:false}, ticks:{color:tickColor(), font:{size:9}, maxTicksLimit:7}}}}
+});
+
+/* ── Prediction history chart ── */
+let _predHistChart = null;
+function buildPredHistChart(labels, data){
+  const canvas = document.getElementById('predict-hist-chart');
+  document.getElementById('pred-hist-loading').style.display = 'none';
+  if(_predHistChart){ _predHistChart.destroy(); _predHistChart = null; }
+  const g = canvas.getContext('2d').createLinearGradient(0,0,0,120);
+  g.addColorStop(0,'rgba(79,135,255,.18)'); g.addColorStop(1,'rgba(79,135,255,0)');
+  _predHistChart = new Chart(canvas, {type:'line',
+    data:{labels, datasets:[{label:'PM2.5 ทำนาย', data, borderColor:'#4f87ff', backgroundColor:g, borderWidth:2, pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:'#4f87ff', pointBorderWidth:2, tension:.4, fill:true}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:isDark()?'#1a2540':'#fff', titleColor:isDark()?'#e2e8f0':'#1e293b', bodyColor:'#64748b', borderColor:'#4f87ff', borderWidth:1, padding:8, callbacks:{label:c=>`ทำนาย: ${c.parsed.y} µg/m³`}}},
+      scales:{y:{grid:{color:gridColor()}, ticks:{color:tickColor(), font:{size:10, family:'DM Mono'}}}, x:{grid:{display:false}, ticks:{color:tickColor(), font:{size:9}, maxTicksLimit:8}}}}});
+}
+
+function updateChartsTheme(){
+  [trendChart, _predHistChart].forEach(ch => {
+    if(!ch) return;
+    ch.options.scales.y.grid.color = gridColor();
+    ch.options.scales.y.ticks.color = tickColor();
+    ch.options.scales.x.ticks.color = tickColor();
+    ch.update();
+  });
+}
+
+/* ── State ── */
+const _devAll = { device1:[], device2:[], device3:[] };
+let _activeDevice = 'device1';
+let _mPmChart = null, _mWeatherChart = null, _weatherInlineChart = null;
+const _sparkCharts = {}, _devCharts = {};
+let _latestWeather = null;
+
+/* ── Weather localStorage persistence ── */
+const weatherHist = [];
+try {
+  const saved = JSON.parse(localStorage.getItem('smartair-weather') || '[]');
+  if(Array.isArray(saved)) weatherHist.push(...saved.slice(-48));
+} catch {}
+function saveWeatherHist(){
+  try { localStorage.setItem('smartair-weather', JSON.stringify(weatherHist.slice(-48))); } catch {}
+}
+
+/* ── Firebase: all 3 devices (50 records each) ── */
+['device1','device2','device3'].forEach(device => {
+  onValue(query(ref(fbDb, `sensor/${device}/history`), limitToLast(50)), snap => {
+    const raw = snap.val();
+    if(!raw) return;
+    markDataReceived();
+    _devAll[device] = Object.values(raw);
+
+    const latest = _devAll[device][_devAll[device].length - 1];
+    const pm = parseFloat(latest?.pm2_5) || 0;
+    const lv = getLevel(pm);
+    const info = DEVICE_INFO[device];
+
+    const hs = document.getElementById(info.hsId);
+    if(hs){ hs.textContent = pm.toFixed(1); hs.style.color = lv.color; }
+    const hb = document.querySelector(`[slot="${info.hotspot}"]`);
+    if(hb) hb.style.backgroundColor = lv.color;
+
+    if(device === _activeDevice) renderActiveDevice();
+  });
+});
+
+function renderActiveDevice(){
+  const records = _devAll[_activeDevice];
+  if(!records.length) return;
+  const latest = records[records.length - 1];
+  const pmNow  = parseFloat(latest?.pm2_5) || 0;
+  const allPm  = records.map(r => parseFloat(r.pm2_5)).filter(v => !isNaN(v));
+  updateHero(pmNow, latest?.datetime || '', allPm);
+  const last20 = records.slice(-20);
+  trendChart.data.labels  = last20.map(r => r.datetime?.split(' ')[1]?.slice(0,5) || '');
+  trendChart.data.datasets[0].data = last20.map(r => parseFloat(r.pm2_5));
+  trendChart.update();
+}
+
+/* ── Device tab switching ── */
+document.querySelectorAll('.dev-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dev-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _activeDevice = btn.dataset.device;
+    renderActiveDevice();
+  });
+});
+
+/* ── Firebase: AI prediction ── */
+onValue(ref(fbDb, '/ai_analysis/prediction'), snap => {
+  const d = snap.val();
+  if(!d) return;
+  renderPredictionCard(d);
+});
+
+function renderPredictionCard(d){
+  const aqi = d.aqi_level || {};
+  const badge = document.getElementById('pred-aqi-badge');
+  badge.textContent = aqi.label || '--';
+  badge.style.background = aqi.color ? aqi.color + '22' : '';
+  badge.style.color = aqi.color || 'var(--sub)';
+  badge.style.borderColor = aqi.color ? aqi.color + '55' : 'var(--border)';
+
+  const hz = d.predict_horizon_s ? `อีก ${d.predict_horizon_s/60|0} นาที` : 'ทำนายล่วงหน้า';
+  document.querySelector('.predict-title').textContent = `🤖 AI ทำนาย (${hz})`;
+
+  const conf = Math.min(Math.max(d.confidence || 0, 0), 100);
+  const devColors = ['#4f87ff','#db2777','#d97706'];
+  const devKeys   = Object.keys(d.per_device || {});
+
+  let devRowsHtml = '';
+  devKeys.forEach((dev, i) => {
+    const p = d.per_device[dev];
+    const c = devColors[i % devColors.length];
+    devRowsHtml += `<div class="pred-dev-row">
+      <div class="pred-dev-dot" style="background:${c}"></div>
+      <div class="pred-dev-name" style="color:${c}">${dev}</div>
+      <div class="pred-dev-vals">PM2.5: ${p.pm2_5} · PM10: ${p.pm10}</div>
+      <div class="pred-dev-r2">R²: ${(p.r2*100).toFixed(0)}%</div>
+    </div>`;
+  });
+
+  document.getElementById('pred-body').innerHTML = `
+    <div class="pred-vals">
+      <div class="pred-val-item">
+        <div class="pred-val-num" style="color:#4f87ff">${d.pm2_5}</div>
+        <div class="pred-val-label">PM2.5<br><span style="font-size:.55rem">µg/m³</span></div>
+      </div>
+      <div class="pred-val-item">
+        <div class="pred-val-num" style="color:#0dbcb9">${d.pm10}</div>
+        <div class="pred-val-label">PM10<br><span style="font-size:.55rem">µg/m³</span></div>
+      </div>
+      <div class="pred-val-item">
+        <div class="pred-val-num" style="color:#67e8f9">${d.pm1}</div>
+        <div class="pred-val-label">PM1.0<br><span style="font-size:.55rem">µg/m³</span></div>
+      </div>
+    </div>
+    <div class="conf-row">
+      <div class="conf-label">ความแม่นยำ (R²)</div>
+      <div class="conf-bar-bg"><div class="conf-bar" id="conf-bar" style="width:${conf}%"></div></div>
+      <div class="conf-pct">${conf.toFixed(0)}%</div>
+    </div>
+    ${devKeys.length > 0 ? `<div class="pred-devices">${devRowsHtml}</div>` : ''}
+    <div class="pred-footer">
+      <span>อัปเดต: ${d.updated_str || '--'}</span>
+      <span class="pred-mae">MAE: ${d.mae || '--'} µg/m³</span>
+    </div>`;
+}
+
+/* ── Firebase: prediction history chart ── */
+onValue(query(ref(fbDb, '/ai_analysis/forecast_history'), limitToLast(20)), snap => {
+  const raw = snap.val();
+  if(!raw) return;
+  const entries = Object.values(raw).sort((a,b) => (a.updated_at||0) - (b.updated_at||0));
+  const labels = entries.map(e => {
+    const d = new Date((e.updated_at || 0) * 1000);
+    return d.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+  });
+  const data = entries.map(e => e.pm2_5 || 0);
+  buildPredHistChart(labels, data);
+});
+
+/* ── Weather ── */
+async function loadWeather(){
+  try{
+    const r = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${OWM_KEY}&units=metric`);
+    const j = await r.json();
+    const snap = {
+      time: new Date().toLocaleString('th-TH', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'short'}),
+      temp:j.main.temp, feels:j.main.feels_like, humidity:j.main.humidity,
+      pressure:j.main.pressure, wind:j.wind.speed, windDir:j.wind.deg||0,
+      rain:j.rain?.['1h']||0, clouds:j.clouds?.all||0, desc:j.weather?.[0]?.description||''
+    };
+    weatherHist.push(snap);
+    if(weatherHist.length > 48) weatherHist.shift();
+    saveWeatherHist();
+    _latestWeather = snap;
+    document.getElementById('w-temp').textContent = snap.temp.toFixed(1);
+    document.getElementById('w-hum').textContent  = snap.humidity;
+    document.getElementById('w-wind').textContent = snap.wind.toFixed(1);
+    updateWeatherInlineTable();
+  } catch {
+    ['w-temp','w-hum','w-wind'].forEach(id => { document.getElementById(id).textContent = 'N/A'; });
+  }
+}
+loadWeather();
+setInterval(loadWeather, 3600000);
+
+function updateWeatherInlineTable(){
+  const tbody = document.getElementById('w-inline-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = weatherHist.length === 0
+    ? `<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--sub)">ยังไม่มีประวัติ</td></tr>`
+    : [...weatherHist].reverse().map(h =>
+        `<tr><td>${h.time}</td><td class="td-val" style="color:#f45b7a">${h.temp.toFixed(1)}</td><td class="td-val" style="color:#8b5cf6">${h.humidity}</td><td class="td-val" style="color:#4f87ff">${h.wind.toFixed(1)}</td><td class="td-val" style="color:#94a3b8">${h.clouds}</td><td style="font-size:.7rem;color:var(--sub)">${h.desc}</td></tr>`
+      ).join('');
+}
+function renderWeatherInline(){
+  if(weatherHist.length === 0) return;
+  if(_weatherInlineChart){ _weatherInlineChart.destroy(); _weatherInlineChart = null; }
+  const c = document.getElementById('weather-inline-chart');
+  if(!c) return;
+  const gT = c.getContext('2d').createLinearGradient(0,0,0,160); gT.addColorStop(0,'rgba(244,91,122,.15)'); gT.addColorStop(1,'rgba(244,91,122,0)');
+  const gH = c.getContext('2d').createLinearGradient(0,0,0,160); gH.addColorStop(0,'rgba(139,92,246,.12)'); gH.addColorStop(1,'rgba(139,92,246,0)');
+  _weatherInlineChart = new Chart(c, {type:'line', data:{labels:weatherHist.map(h=>h.time), datasets:[
+    {label:'อุณหภูมิ (°C)', data:weatherHist.map(h=>h.temp), borderColor:'#f45b7a', backgroundColor:gT, borderWidth:2, pointRadius:3, tension:.4, fill:true, yAxisID:'y'},
+    {label:'ความชื้น (%)',  data:weatherHist.map(h=>h.humidity), borderColor:'#8b5cf6', backgroundColor:gH, borderWidth:2, pointRadius:3, tension:.4, fill:true, yAxisID:'y2', borderDash:[5,3]},
+  ]}, options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false}, plugins:{legend:{labels:{color:'#64748b', font:{size:11}}}},
+    scales:{y:{position:'left', grid:{color:gridColor()}, ticks:{color:tickColor(), font:{size:10}}}, y2:{position:'right', grid:{display:false}, ticks:{color:tickColor(), font:{size:10}}}, x:{grid:{display:false}, ticks:{color:tickColor(), font:{size:9}, maxRotation:30}}}}});
+}
+
+/* ── Modal system ── */
+window.closeModal = function(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; };
+function openModal(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
+document.querySelectorAll('.overlay').forEach(el => { el.addEventListener('click', e => { if(e.target === el) closeModal(el.id); }); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(m => closeModal(m.id)); });
+
+/* ── PM modal (active device) ── */
+document.getElementById('hero-card').addEventListener('click', () => {
+  const records = _devAll[_activeDevice];
+  if(!records.length) return;
+  const info = DEVICE_INFO[_activeDevice];
+  document.getElementById('modal-pm-sub').textContent = `${info.name} · ประวัติ 50 จุดล่าสุด · Firebase Realtime`;
+  if(_mPmChart){ _mPmChart.destroy(); _mPmChart = null; }
+  setTimeout(() => {
+    const c = document.getElementById('m-pm-chart');
+    _mPmChart = lineChart(c,
+      records.map(r => r.datetime?.split(' ')[1]?.slice(0,5) || ''),
+      records.map(r => parseFloat(r.pm2_5)),
+      info.color, 170);
+  }, 60);
+  const latest = records[records.length - 1];
+  const fields = Object.keys(latest).filter(k => !SKIP.has(k.toLowerCase()) && typeof latest[k] === 'number');
+  document.getElementById('pm-thead').innerHTML = '<th>เวลา</th>' + fields.map(f => `<th>${metaFor(f).icon} ${metaFor(f).name}</th>`).join('');
+  document.getElementById('pm-tbody').innerHTML = [...records].reverse().map(r =>
+    `<tr><td>${r.datetime?.split(' ')[1]?.slice(0,5)||'--'}<br><span style="font-size:.58rem;color:var(--sub)">${r.datetime?.split(' ')[0]||''}</span></td>` +
+    fields.map(f => { const v = parseFloat(r[f]); const m = metaFor(f); return `<td class="td-val" style="color:${m.color}">${isNaN(v)?'--':(Number.isInteger(v)?v:v.toFixed(1))}<span style="font-size:.58rem;color:var(--sub);margin-left:2px">${m.unit}</span></td>`; }).join('') + '</tr>'
+  ).join('');
+  openModal('modal-pm');
+});
+
+/* ── All fields modal (all 3 devices) ── */
+document.getElementById('btn-allfields').addEventListener('click', () => {
+  const allDevices = Object.keys(_devAll).filter(d => _devAll[d].length > 0);
+  if(!allDevices.length) return;
+
+  const primaryRecords = _devAll[_activeDevice].length ? _devAll[_activeDevice] : _devAll[allDevices[0]];
+  const latest = primaryRecords[primaryRecords.length - 1];
+  const grid = document.getElementById('mf-grid');
+  grid.innerHTML = '';
+  let i = 0;
+  for(const [key, val] of Object.entries(latest)){
+    if(SKIP.has(key.toLowerCase()) || typeof val === 'object') continue;
+    const num = parseFloat(val); if(isNaN(num)) continue;
+    const m = metaFor(key);
+    const hist = primaryRecords.map(r => parseFloat(r[key])).filter(v => !isNaN(v));
+    const prev = primaryRecords.length >= 2 ? parseFloat(primaryRecords[primaryRecords.length-2][key]) : null;
+    const delta = (!isNaN(prev) && prev !== null) ? num - prev : null;
+    const disp = Number.isInteger(num) ? num : num.toFixed(1);
+    const el = document.createElement('div'); el.className = 'mfield-card';
+    el.innerHTML = `<div class="mfield-bar" style="background:${m.color}"></div><div class="mfield-icon">${m.icon}</div><div class="mfield-name">${m.name}</div><div class="mfield-val" style="color:${m.color}">${disp}</div><div class="mfield-unit">${m.unit}</div>` +
+      (delta !== null ? `<div class="mfield-delta" style="color:${delta>=0?'#dc2626':'#16a34a'}">${delta>=0?'↑':'↓'}${Math.abs(delta).toFixed(1)}</div>` : '') +
+      (hist.length > 1 ? `<div class="mfield-spark"><canvas id="msp-${key}" width="120" height="30"></canvas></div>` : '');
+    grid.appendChild(el);
+    if(hist.length > 1) setTimeout(() => {
+      const c = document.getElementById('msp-' + key); if(!c) return;
+      if(_sparkCharts[key]) _sparkCharts[key].destroy();
+      _sparkCharts[key] = sparkLine(c, hist, m.color);
+    }, 70 + i * 10);
+    i++;
+  }
+
+  const wrap = document.getElementById('dev-wrap');
+  wrap.innerHTML = '';
+  const PALETTE = ['#4f87ff','#db2777','#d97706','#22c55e','#8b5cf6','#f59e0b'];
+  allDevices.forEach((device, di) => {
+    const records = _devAll[device];
+    const color   = PALETTE[di % PALETTE.length];
+    const info    = DEVICE_INFO[device] || { name: device };
+    const lat     = records[records.length - 1];
+    const numFields = Object.keys(lat).filter(k => !SKIP.has(k.toLowerCase()) && typeof lat[k] === 'number');
+
+    const sec = document.createElement('div'); sec.style.marginBottom = '18px';
+    sec.innerHTML = `<div class="dev-header"><div class="dev-tag" style="background:${color}15;border:1px solid ${color}40;color:${color}"><i class="fas fa-microchip" style="font-size:.65rem"></i> ${info.name} (${device}) <span style="opacity:.5;font-size:.65rem">${records.length} ครั้ง</span></div><div class="dev-ts">อัปเดต: ${lat?.datetime||'--'}</div></div>`;
+    const devGrid = document.createElement('div'); devGrid.className = 'dev-grid';
+
+    numFields.forEach((field, fi) => {
+      const m = metaFor(field);
+      const hist   = records.map(r => parseFloat(r[field])).filter(v => !isNaN(v));
+      const histTs = records.map(r => r.datetime?.split(' ')[1]?.slice(0,5) || '');
+      const cur    = hist[hist.length - 1];
+      const prev2  = hist.length >= 2 ? hist[hist.length - 2] : null;
+      const delta  = prev2 !== null ? cur - prev2 : null;
+      const minV = Math.min(...hist), maxV = Math.max(...hist), avgV = hist.reduce((a,b)=>a+b,0)/hist.length;
+      const card = document.createElement('div'); card.className = 'hc-card';
+      card.innerHTML = `<div class="hc-top"><div><div class="hc-name">${m.icon} ${m.name}</div><div style="display:flex;align-items:baseline;gap:5px"><span class="hc-val" style="color:${m.color}">${Number.isInteger(cur)?cur:cur.toFixed(1)}</span><span style="font-size:.68rem;color:var(--sub)">${m.unit}</span>${delta!==null?`<span style="font-size:.65rem;font-weight:700;color:${delta>=0?'#dc2626':'#16a34a'}">${delta>=0?'↑':'↓'}${Math.abs(delta).toFixed(1)}</span>`:''}</div></div><div class="hc-stats"><div>min <b style="color:var(--text)">${minV.toFixed(1)}</b></div><div>max <b style="color:var(--text)">${maxV.toFixed(1)}</b></div><div>avg <b style="color:var(--text)">${avgV.toFixed(1)}</b></div></div></div><div class="hc-chart"><canvas id="hcc-${device}-${field}"></canvas></div>`;
+      devGrid.appendChild(card);
+      setTimeout(() => {
+        const c = document.getElementById(`hcc-${device}-${field}`); if(!c) return;
+        const key = `${device}-${field}`;
+        if(_devCharts[key]) _devCharts[key].destroy();
+        _devCharts[key] = tinyHistChart(c, hist, histTs, m.color);
+      }, 80 + (di*20 + fi) * 8);
+    });
+    sec.appendChild(devGrid);
+    wrap.appendChild(sec);
+  });
+  openModal('modal-fields');
+});
+
+/* ── Export CSV ── */
+document.getElementById('btn-export-csv').addEventListener('click', () => {
+  const records = _devAll[_activeDevice];
+  if(!records.length) return;
+  const info = DEVICE_INFO[_activeDevice];
+  const fields = Object.keys(records[0]).filter(k => k !== 'id');
+  const header = fields.join(',');
+  const rows = records.map(r => fields.map(f => r[f] ?? '').join(',')).join('\n');
+  const blob = new Blob([header + '\n' + rows], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = `smartair_${info.name}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+});
+
+/* ── Weather modal ── */
+['tile-weather','tile-hum','tile-wind'].forEach(id => {
+  document.getElementById(id).addEventListener('click', () => {
+    const wFields = _latestWeather ? [
+      {icon:'🌡️', name:'อุณหภูมิ',    val:_latestWeather.temp.toFixed(1),   unit:'°C',  color:'#f45b7a'},
+      {icon:'🤔', name:'รู้สึกเหมือน', val:_latestWeather.feels.toFixed(1),  unit:'°C',  color:'#fb923c'},
+      {icon:'💧', name:'ความชื้น',     val:_latestWeather.humidity,           unit:'%',   color:'#8b5cf6'},
+      {icon:'🔵', name:'ความดัน',      val:_latestWeather.pressure,           unit:'hPa', color:'#0dbcb9'},
+      {icon:'💨', name:'ลม',           val:_latestWeather.wind.toFixed(1),    unit:'m/s', color:'#4f87ff'},
+      {icon:'🌧️', name:'ฝน 1h',        val:_latestWeather.rain.toFixed(1),    unit:'mm',  color:'#60a5fa'},
+      {icon:'☁️', name:'เมฆ',          val:_latestWeather.clouds,             unit:'%',   color:'#94a3b8'},
+    ] : [];
+    document.getElementById('w-detail-grid').innerHTML = wFields.map(f =>
+      `<div class="mfield-card"><div class="mfield-bar" style="background:${f.color}"></div><div class="mfield-icon">${f.icon}</div><div class="mfield-name">${f.name}</div><div class="mfield-val" style="color:${f.color}">${f.val}</div><div class="mfield-unit">${f.unit}</div></div>`
+    ).join('');
+    if(_mWeatherChart){ _mWeatherChart.destroy(); _mWeatherChart = null; }
+    if(weatherHist.length > 0){
+      setTimeout(() => {
+        const c = document.getElementById('m-weather-chart');
+        const gT = c.getContext('2d').createLinearGradient(0,0,0,170); gT.addColorStop(0,'rgba(244,91,122,.15)'); gT.addColorStop(1,'rgba(244,91,122,0)');
+        const gH = c.getContext('2d').createLinearGradient(0,0,0,170); gH.addColorStop(0,'rgba(139,92,246,.12)'); gH.addColorStop(1,'rgba(139,92,246,0)');
+        _mWeatherChart = new Chart(c, {type:'line', data:{labels:weatherHist.map(h=>h.time), datasets:[
+          {label:'อุณหภูมิ (°C)', data:weatherHist.map(h=>h.temp),     borderColor:'#f45b7a', backgroundColor:gT, borderWidth:2, pointRadius:3, tension:.4, fill:true, yAxisID:'y'},
+          {label:'ความชื้น (%)',  data:weatherHist.map(h=>h.humidity), borderColor:'#8b5cf6', backgroundColor:gH, borderWidth:2, pointRadius:3, tension:.4, fill:true, yAxisID:'y2', borderDash:[5,3]},
+        ]}, options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{labels:{color:'#64748b', font:{size:11}}}},
+          scales:{y:{position:'left', grid:{color:gridColor()}, ticks:{color:tickColor(), font:{size:10}}}, y2:{position:'right', grid:{display:false}, ticks:{color:tickColor(), font:{size:10}}}, x:{grid:{display:false}, ticks:{color:tickColor(), font:{size:9}, maxRotation:30}}}}});
+      }, 60);
+    }
+    const tbody = document.getElementById('w-hist-tbody');
+    tbody.innerHTML = weatherHist.length === 0
+      ? `<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--sub)">ยังไม่มีประวัติ (อัปเดตทุก 1 ชม.)</td></tr>`
+      : [...weatherHist].reverse().map(h =>
+          `<tr><td>${h.time}</td><td class="td-val" style="color:#f45b7a">${h.temp.toFixed(1)}</td><td class="td-val" style="color:#8b5cf6">${h.humidity}</td><td class="td-val" style="color:#4f87ff">${h.wind.toFixed(1)}</td><td class="td-val" style="color:#60a5fa">${h.rain.toFixed(1)}</td><td class="td-val" style="color:#94a3b8">${h.clouds}</td><td style="font-size:.7rem;color:var(--sub)">${h.desc}</td></tr>`
+        ).join('');
+    openModal('modal-weather');
+  });
+});
+
+/* ── 3D viewer controls ── */
+const viewer = document.querySelector('#kmutt-model');
+if(viewer){
+  document.getElementById('btn-cam-reset').addEventListener('click', () => {
+    viewer.cameraTarget = "auto auto auto"; viewer.cameraOrbit = "0deg 45deg auto";
+  });
+  document.getElementById('btn-cam-ene').addEventListener('click', () => {
+    viewer.cameraTarget = "-363m 220m -972m"; viewer.cameraOrbit = "45deg 60deg 15m";
+  });
+  document.getElementById('btn-cam-dev2').addEventListener('click', () => {
+    viewer.cameraTarget = "428m 160m -425m"; viewer.cameraOrbit = "45deg 60deg 15m";
+  });
+  document.getElementById('btn-cam-dev3').addEventListener('click', () => {
+    viewer.cameraTarget = "-42m 131m -1172m"; viewer.cameraOrbit = "45deg 60deg 15m";
+  });
+  viewer.addEventListener('click', event => {
+    const hit = viewer.positionAndNormalFromPoint(event.clientX, event.clientY);
+    if(hit != null){
+      const p = hit.position;
+      const s = `${p.x.toFixed(2)}m ${p.y.toFixed(2)}m ${p.z.toFixed(2)}m`;
+      console.log("📍 พิกัด:", s);
+    }
+  });
+}
+</script>
+</body>
+</html>
