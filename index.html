@@ -633,6 +633,115 @@ input[type=range]::-webkit-slider-thumb {
 .loading span { animation:bob .7s ease-in-out infinite; }
 .loading span:nth-child(2) { animation-delay:.15s; }
 .loading span:nth-child(3) { animation-delay:.3s; }
+
+/* ── Arc Gauge (Health App Style) ── */
+.gauge-container {
+  position:relative;
+  width:230px;
+  margin:0 auto 6px;
+}
+.arc-svg { width:100%; height:auto; display:block; }
+.arc-track { stroke:var(--raised); }
+[data-theme="light"] .arc-track { stroke:rgba(0,0,0,.08); }
+.arc-fill {
+  stroke-dasharray:302;
+  stroke-dashoffset:302;
+  transition:stroke-dashoffset 1s cubic-bezier(.34,1.56,.64,1);
+}
+.arc-needle {
+  fill:#fff; stroke:var(--current-c); stroke-width:3;
+  filter:drop-shadow(0 2px 8px rgba(0,0,0,.5));
+  transition:cx 1s cubic-bezier(.34,1.56,.64,1), cy 1s cubic-bezier(.34,1.56,.64,1), stroke .6s;
+}
+.arc-num-overlay {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%); text-align:center; pointer-events:none;
+}
+.arc-gauge-label-row {
+  display:flex; justify-content:space-between;
+  padding:0 6px; font-size:.62rem; color:var(--sub); margin-top:2px;
+}
+
+/* Override pm-num size inside gauge */
+.gauge-container .pm-num {
+  font-size:3.6rem !important;
+  text-shadow:0 0 32px var(--current-ring) !important;
+}
+.gauge-container .pm-meta { display:flex; align-items:center; justify-content:center; gap:5px; margin-top:3px; }
+.gauge-container .pm-name { font-size:.78rem; font-weight:700; color:var(--sub); }
+.gauge-container .pm-unit { font-size:.78rem; color:var(--sub); }
+
+/* ── Stats strip overrides (card style) ── */
+.stats-strip {
+  display:grid !important;
+  grid-template-columns:repeat(4,1fr) !important;
+  background:transparent !important;
+  border:none !important;
+  gap:9px !important;
+  overflow:visible !important;
+  padding:0 !important;
+}
+.stat-item {
+  background:var(--white) !important;
+  border:1px solid var(--border) !important;
+  border-radius:16px !important;
+  padding:14px 8px 12px !important;
+  text-align:center !important;
+  border-right:none !important;
+  box-shadow:var(--glow-card) !important;
+  transition:transform .2s, box-shadow .2s, background .3s !important;
+}
+.stat-item:hover { transform:translateY(-3px) !important; box-shadow:var(--shadow-md) !important; }
+.stat-icon-badge {
+  font-size:1.1rem; margin-bottom:5px;
+  display:block;
+}
+.stat-sub-unit {
+  font-size:.58rem; color:var(--sub); margin-top:2px; line-height:1;
+}
+
+/* ── Predict card: gradient top bar ── */
+.predict-card { position:relative; overflow:hidden; }
+.predict-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(to right, #4f87ff, #06d6e0, #8b5cf6);
+  border-radius:22px 22px 0 0;
+}
+
+/* ── Ripple effect ── */
+.ripple-el { position:relative !important; overflow:hidden !important; }
+.ripple {
+  position:absolute; border-radius:50%;
+  background:rgba(255,255,255,.22);
+  transform:scale(0);
+  animation:ripple-anim .55s linear;
+  pointer-events:none; z-index:99;
+}
+@keyframes ripple-anim { to { transform:scale(4); opacity:0; } }
+
+/* ── Number counter pop ── */
+@keyframes num-pop {
+  0%  { transform:scale(1); }
+  45% { transform:scale(1.07); }
+  100%{ transform:scale(1); }
+}
+.num-pop { animation:num-pop .35s cubic-bezier(.34,1.56,.64,1); }
+
+/* ── Hero improvements ── */
+.hero { cursor:pointer; }
+.hero:hover { border-color:var(--current-c) !important; }
+.hero:active { transform:scale(.99); }
+
+/* ── Bottom nav: pill indicator ── */
+.nav-item.active .nav-label { font-weight:700; }
+.nav-pip { width:18px !important; height:4px !important; border-radius:2px !important; }
+
+/* ── Ambient body glow ── */
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:radial-gradient(ellipse at 50% -5%, rgba(79,135,255,.055) 0%, transparent 65%);
+}
+.page, .bottom-nav { position:relative; z-index:1; }
 </style>
 </head>
 <body>
@@ -679,33 +788,94 @@ input[type=range]::-webkit-slider-thumb {
       <div class="home-col-left">
         <div class="hero fade" id="hero-card" style="animation-delay:.08s">
           <div class="hero-tap"><i class="fas fa-chart-line"></i> แตะดูรายละเอียด</div>
-          <div class="face-ring" id="face">⏳</div>
+          <div id="face" style="display:none"></div>
+
+          <!-- ── SVG Arc Gauge ── -->
+          <div class="gauge-container">
+            <svg class="arc-svg" viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="aqiGrad" x1="14" y1="0" x2="206" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%"   stop-color="#22c55e"/>
+                  <stop offset="28%"  stop-color="#eab308"/>
+                  <stop offset="55%"  stop-color="#f97316"/>
+                  <stop offset="80%"  stop-color="#ef4444"/>
+                  <stop offset="100%" stop-color="#9f1239"/>
+                </linearGradient>
+                <filter id="ndlGlow" x="-80%" y="-80%" width="260%" height="260%">
+                  <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+              <!-- Background track -->
+              <path class="arc-track" d="M 14 120 A 96 96 0 0 1 206 120"
+                    stroke-width="14" fill="none" stroke-linecap="round"/>
+              <!-- Dim gradient always visible -->
+              <path d="M 14 120 A 96 96 0 0 1 206 120"
+                    stroke="url(#aqiGrad)" stroke-width="14" fill="none"
+                    stroke-linecap="round" opacity="0.18"/>
+              <!-- Active animated fill -->
+              <path class="arc-fill" id="arc-fill"
+                    d="M 14 120 A 96 96 0 0 1 206 120"
+                    stroke="url(#aqiGrad)" stroke-width="14" fill="none"
+                    stroke-linecap="round"/>
+              <!-- Needle dot -->
+              <circle class="arc-needle" id="arc-needle"
+                      cx="14" cy="120" r="9" filter="url(#ndlGlow)"/>
+            </svg>
+            <!-- Number overlay in center of arc -->
+            <div class="arc-num-overlay">
+              <div class="pm-num" id="pm-num">--</div>
+              <div class="pm-meta">
+                <span class="pm-name">PM2.5</span>&nbsp;<span class="pm-unit">µg/m³</span>
+              </div>
+            </div>
+            <!-- Gauge scale labels -->
+            <div class="arc-gauge-label-row">
+              <span>0</span><span>75</span><span>150+</span>
+            </div>
+          </div>
+
           <div class="status-label" id="status-label">กำลังโหลด...</div>
           <div class="status-desc" id="status-desc">รอรับข้อมูลจากเซ็นเซอร์</div>
-          <div class="pm-row">
-            <div class="pm-num" id="pm-num">--</div>
-            <div class="pm-meta"><div class="pm-name">PM2.5</div><div class="pm-unit">µg/m³</div></div>
-          </div>
           <div class="updated">อัปเดตล่าสุด: <span id="last-time">--</span></div>
         </div>
 
         <div class="stats-strip fade" id="stats-strip" style="animation-delay:.10s">
-          <div class="stat-item"><div class="stat-label">สูงสุด</div><div class="stat-val" id="stat-max">--</div></div>
-          <div class="stat-item"><div class="stat-label">เฉลี่ย</div><div class="stat-val" id="stat-avg">--</div></div>
-          <div class="stat-item"><div class="stat-label">ต่ำสุด</div><div class="stat-val" id="stat-min">--</div></div>
-          <div class="stat-item"><div class="stat-label">เทียบก่อนหน้า</div><div class="stat-val" id="stat-delta">--</div></div>
+          <div class="stat-item">
+            <span class="stat-icon-badge" style="color:#ef4444">↑</span>
+            <div class="stat-label">สูงสุด</div>
+            <div class="stat-val" id="stat-max">--</div>
+            <div class="stat-sub-unit">µg/m³</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-icon-badge" style="color:#4f87ff">≈</span>
+            <div class="stat-label">เฉลี่ย</div>
+            <div class="stat-val" id="stat-avg">--</div>
+            <div class="stat-sub-unit">µg/m³</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-icon-badge" style="color:#22c55e">↓</span>
+            <div class="stat-label">ต่ำสุด</div>
+            <div class="stat-val" id="stat-min">--</div>
+            <div class="stat-sub-unit">µg/m³</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-icon-badge" style="color:var(--sub)">Δ</span>
+            <div class="stat-label">เทียบก่อน</div>
+            <div class="stat-val" id="stat-delta">--</div>
+            <div class="stat-sub-unit"></div>
+          </div>
         </div>
 
-        <div class="gauge-wrap fade" style="animation-delay:.12s">
-          <div class="gauge-title">📊 ระดับ PM2.5 อยู่ที่ไหน?</div>
-          <div class="gauge-bar-bg"><div class="gauge-pointer" id="gauge-ptr">📍</div></div>
-          <div class="gauge-labels"><span>0 ดีมาก</span><span>25</span><span>50</span><span>100</span><span>&gt;150 อันตราย</span></div>
-          <div class="legend">
-            <div class="leg-item"><div class="leg-dot" style="background:#22c55e"></div>ดี (0–25)</div>
-            <div class="leg-item"><div class="leg-dot" style="background:#65a30d"></div>ยอมรับได้ (26–37)</div>
-            <div class="leg-item"><div class="leg-dot" style="background:#d97706"></div>เริ่มมีผล (38–50)</div>
+        <!-- AQI legend (compact) -->
+        <div class="gauge-wrap fade" style="animation-delay:.12s; padding:14px 18px;">
+          <div class="gauge-title" style="margin-bottom:10px">📊 มาตรฐาน AQI (PCD)</div>
+          <div class="legend" style="gap:6px">
+            <div class="leg-item"><div class="leg-dot" style="background:#22c55e"></div>ดีมาก (0–25)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#65a30d"></div>ดี (26–37)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#d97706"></div>ปานกลาง (38–50)</div>
             <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div>ไม่ดี (51–90)</div>
-            <div class="leg-item"><div class="leg-dot" style="background:#7c2d12"></div>อันตราย (&gt;90)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#9f1239"></div>อันตราย (&gt;90)</div>
           </div>
         </div>
       </div>
@@ -1089,19 +1259,71 @@ function markDataReceived(){
   }
 }
 
+/* ── Arc gauge helpers ── */
+const ARC_L = 302, ARC_R = 96, ARC_CX = 110, ARC_CY = 120;
+
+function updateArcGauge(pm) {
+  const p = Math.min(pm / 150, 1);
+  const fill = document.getElementById('arc-fill');
+  if (fill) fill.style.strokeDashoffset = (ARC_L * (1 - p)).toFixed(1);
+  const angle = Math.PI * (1 - p);
+  const nx = (ARC_CX + ARC_R * Math.cos(angle)).toFixed(1);
+  const ny = (ARC_CY - ARC_R * Math.sin(angle)).toFixed(1);
+  const needle = document.getElementById('arc-needle');
+  if (needle) { needle.setAttribute('cx', nx); needle.setAttribute('cy', ny); }
+}
+
+function animateNumber(el, from, to, duration) {
+  duration = duration || 650;
+  const startTime = performance.now();
+  const run = (now) => {
+    const t = Math.min((now - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = (from + (to - from) * ease).toFixed(1);
+    if (t < 1) requestAnimationFrame(run);
+    else {
+      el.textContent = to.toFixed(1);
+      el.classList.remove('num-pop');
+      void el.offsetWidth;
+      el.classList.add('num-pop');
+    }
+  };
+  requestAnimationFrame(run);
+}
+
+/* ── Ripple effect ── */
+function addRipple(e) {
+  const el = e.currentTarget;
+  const rect = el.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height) * 1.8;
+  const rip = document.createElement('span');
+  rip.className = 'ripple';
+  rip.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size/2}px;top:${e.clientY - rect.top - size/2}px`;
+  el.appendChild(rip);
+  rip.addEventListener('animationend', () => rip.remove());
+}
+
 /* ── Hero update ── */
 function updateHero(pm, ts, allPm){
   const lv = getLevel(pm);
   setColors(lv);
-  document.getElementById('face').textContent = lv.face;
   document.getElementById('status-label').textContent = lv.label;
   document.getElementById('status-desc').textContent = lv.desc;
-  document.getElementById('pm-num').textContent = pm.toFixed(1);
   document.getElementById('last-time').textContent = ts || '--';
-  const pct = Math.min(Math.max(pm / 150, 0), 1) * 100;
-  const ptr = document.getElementById('gauge-ptr');
-  ptr.style.left = pct + '%';
-  ptr.style.borderColor = lv.color;
+
+  // Animate number in arc gauge
+  const numEl = document.getElementById('pm-num');
+  const prevVal = parseFloat(numEl.getAttribute('data-pm') || '0') || 0;
+  numEl.setAttribute('data-pm', pm);
+  if (prevVal === 0) {
+    numEl.textContent = pm.toFixed(1);
+  } else {
+    animateNumber(numEl, prevVal, pm);
+  }
+
+  // Update arc gauge needle + fill
+  updateArcGauge(pm);
+
   document.getElementById('advice-title').textContent = '💡 คำแนะนำ';
   document.getElementById('advice-list').innerHTML = lv.advice.map(a => `<li>${a}</li>`).join('');
   if(allPm.length > 0){
@@ -1511,6 +1733,18 @@ document.getElementById('btn-export-csv').addEventListener('click', () => {
         ).join('');
     openModal('modal-weather');
   });
+});
+
+/* ── Attach ripple to interactive elements ── */
+['dev-tab','twin-btn','more-btn','export-btn'].forEach(cls => {
+  document.querySelectorAll('.' + cls).forEach(el => {
+    el.classList.add('ripple-el');
+    el.addEventListener('click', addRipple);
+  });
+});
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.classList.add('ripple-el');
+  el.addEventListener('click', addRipple);
 });
 
 /* ── 3D viewer controls ── */
