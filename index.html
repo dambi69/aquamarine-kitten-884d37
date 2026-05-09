@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th" data-theme="dark">
+<html lang="th" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,790 +7,351 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
 <style>
-/* ── Variables (dark default) ── */
 :root {
-  --good:#22c55e; --good-bg:rgba(34,197,94,.10); --good-ring:rgba(34,197,94,.45);
-  --mod:#f59e0b;  --mod-bg:rgba(245,158,11,.10); --mod-ring:rgba(245,158,11,.45);
-  --bad:#ef4444;  --bad-bg:rgba(239,68,68,.10);  --bad-ring:rgba(239,68,68,.45);
+  --good:#16a34a; --good-bg:#dcfce7; --good-ring:#86efac;
+  --mod:#d97706;  --mod-bg:#fef3c7;  --mod-ring:#fcd34d;
+  --bad:#dc2626;  --bad-bg:#fee2e2;  --bad-ring:#fca5a5;
 
-  --bg:#060d1a;
-  --white:#0b1628;
-  --text:#d8e8f5;
-  --sub:#4a6685;
-  --border:rgba(79,135,255,.13);
-  --raised:#0f1d35;
-  --nav-bg:rgba(5,11,24,.96);
-  --grid-line:rgba(79,135,255,.04);
+  --bg:#f0f4f8;
+  --white:#ffffff;
+  --text:#1e293b;
+  --sub:#64748b;
+  --border:#e2e8f0;
+  --raised:#f1f5f9;
+  --nav-bg:rgba(255,255,255,0.92);
 
-  --blue:#4f87ff; --teal:#06d6e0; --rose:#f45b7a;
+  --blue:#4f87ff; --teal:#0dbcb9; --rose:#f45b7a;
   --amber:#f59e0b; --violet:#8b5cf6; --green:#22c55e;
 
-  --r:22px; --r-sm:14px;
-  --shadow:0 4px 28px rgba(0,0,0,.55);
-  --shadow-md:0 10px 52px rgba(0,0,0,.75);
-  --glow-card:0 0 0 1px rgba(79,135,255,.08), 0 4px 28px rgba(0,0,0,.55);
+  --r:24px; --r-sm:16px;
+  --shadow:0 2px 14px rgba(30,41,59,.08);
+  --shadow-md:0 8px 32px rgba(30,41,59,.14);
 
   --current-c:var(--good);
   --current-bg:var(--good-bg);
   --current-ring:var(--good-ring);
 
-  --nav-h:76px;
+  --nav-h:68px;
 }
 
-/* ── Light overrides ── */
-[data-theme="light"] {
-  --bg:#edf1f8; --white:#ffffff; --text:#0f1a2e; --sub:#566882;
-  --border:#dde5f0; --raised:#f4f7fb; --nav-bg:rgba(255,255,255,.97);
-  --grid-line:rgba(15,26,46,.025);
-  --shadow:0 2px 12px rgba(15,23,42,.07),0 1px 3px rgba(15,23,42,.04);
-  --shadow-md:0 8px 36px rgba(15,23,42,.14);
-  --glow-card:var(--shadow);
-  --good:#16a34a; --good-bg:#dcfce7; --good-ring:#86efac;
-  --mod:#d97706;  --mod-bg:#fef3c7;  --mod-ring:#fcd34d;
-  --bad:#dc2626;  --bad-bg:#fee2e2;  --bad-ring:#fca5a5;
+[data-theme="dark"] {
+  --bg:#0f172a;
+  --white:#1a2540;
+  --text:#e2e8f0;
+  --sub:#94a3b8;
+  --border:#1e3356;
+  --raised:#1e2d4a;
+  --nav-bg:rgba(15,23,42,0.94);
+  --shadow:0 2px 14px rgba(0,0,0,.35);
+  --shadow-md:0 8px 32px rgba(0,0,0,.55);
+  --good-bg:#052e16; --good-ring:#166534;
+  --mod-bg:#451a03;  --mod-ring:#92400e;
+  --bad-bg:#450a0a;  --bad-ring:#991b1b;
 }
 
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Prompt',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; transition:background .3s,color .3s; }
 
-body {
-  font-family:'Prompt',sans-serif;
-  background:var(--bg);
-  background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size:44px 44px;
-  color:var(--text);
-  min-height:100vh;
-  -webkit-font-smoothing:antialiased;
-  transition:background .3s, color .3s;
-}
-
-.page { max-width:760px; margin:0 auto; padding:20px 16px; padding-bottom:calc(var(--nav-h) + 28px); }
+.page { max-width:720px; margin:0 auto; padding:16px 14px; padding-bottom:calc(var(--nav-h) + 20px); }
 .tab-section { display:none; }
 .tab-section.active { display:block; }
 
 /* ── Error banner ── */
-.error-banner {
-  display:none; position:fixed; top:0; left:0; right:0; z-index:2000;
-  background:#b91c1c; color:#fff; padding:12px 18px;
-  font-size:.88rem; font-weight:600;
-  align-items:center; justify-content:space-between; gap:12px;
-  border-bottom:1px solid rgba(255,255,255,.15);
-}
+.error-banner { display:none; position:fixed; top:0; left:0; right:0; z-index:2000; background:#dc2626; color:#fff; padding:10px 16px; font-size:.8rem; font-weight:600; align-items:center; justify-content:space-between; gap:12px; }
 .error-banner.show { display:flex; }
-.error-retry {
-  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
-  color:#fff; border-radius:8px; padding:6px 14px;
-  font-size:.82rem; font-weight:700; cursor:pointer; font-family:'Prompt',sans-serif;
-}
+.error-retry { background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.4); color:#fff; border-radius:8px; padding:4px 12px; font-size:.75rem; font-weight:700; cursor:pointer; font-family:'Prompt',sans-serif; }
 
 /* ── Header ── */
-.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
-.logo { display:flex; align-items:center; gap:13px; }
-.logo-icon {
-  width:48px; height:48px; border-radius:14px;
-  background:linear-gradient(135deg, #22c55e, #06d6e0);
-  display:flex; align-items:center; justify-content:center;
-  font-size:1.5rem;
-  box-shadow:0 0 18px rgba(6,214,224,.35), 0 4px 14px rgba(0,0,0,.3);
-}
-.logo-text { font-size:1.2rem; font-weight:700; letter-spacing:.3px; }
-.logo-place { font-size:.78rem; color:var(--sub); font-weight:400; margin-top:1px; }
-.header-right { display:flex; align-items:center; gap:10px; }
-.live-tag {
-  display:flex; align-items:center; gap:7px;
-  font-size:.8rem; font-weight:600;
-  color:var(--good); background:var(--good-bg);
-  padding:7px 14px; border-radius:99px;
-  border:1px solid var(--good-ring);
-  transition:background .3s, border-color .3s;
-}
-.dot { width:7px; height:7px; border-radius:50%; background:var(--good); animation:blink 2s infinite; flex-shrink:0; }
-.dm-btn {
-  width:42px; height:42px; border-radius:13px;
-  background:var(--raised); border:1px solid var(--border);
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer; font-size:1.1rem;
-  transition:background .2s, transform .2s, border-color .3s;
-  flex-shrink:0;
-}
-.dm-btn:hover { transform:rotate(18deg); background:var(--white); }
+.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon { width:42px; height:42px; border-radius:13px; background:linear-gradient(135deg,#4ade80,#06b6d4); display:flex; align-items:center; justify-content:center; font-size:1.4rem; box-shadow:0 4px 12px rgba(74,222,128,.3); }
+.logo-text { font-size:1.05rem; font-weight:700; }
+.logo-place { font-size:.68rem; color:var(--sub); font-weight:400; }
+.header-right { display:flex; align-items:center; gap:8px; }
+.live-tag { display:flex; align-items:center; gap:6px; font-size:.72rem; font-weight:600; color:var(--good); background:var(--good-bg); padding:5px 12px; border-radius:99px; transition:background .3s; }
+.dot { width:7px; height:7px; border-radius:50%; background:var(--good); animation:blink 2s infinite; }
+.dm-btn { width:36px; height:36px; border-radius:11px; background:var(--raised); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1rem; transition:background .2s,transform .2s; flex-shrink:0; }
+.dm-btn:hover { transform:rotate(15deg); }
 
 /* ── Device tabs ── */
-.device-tabs { display:flex; gap:8px; margin-bottom:18px; overflow-x:auto; padding-bottom:2px; }
+.device-tabs { display:flex; gap:6px; margin-bottom:8px; overflow-x:auto; padding-bottom:2px; }
 .device-tabs::-webkit-scrollbar { display:none; }
-.dev-tab {
-  flex-shrink:0; padding:9px 20px; border-radius:99px;
-  border:1.5px solid var(--border); background:var(--raised);
-  font-size:.82rem; font-weight:700; color:var(--sub);
-  cursor:pointer; font-family:'Prompt',sans-serif;
-  transition:all .2s; white-space:nowrap;
-}
-.dev-tab:hover { color:var(--text); border-color:rgba(79,135,255,.3); }
-.dev-tab.active {
-  background:var(--blue); color:#fff; border-color:var(--blue);
-  box-shadow:0 0 16px rgba(79,135,255,.45);
-}
-.dev-tab[data-device="device2"].active { background:#db2777; border-color:#db2777; box-shadow:0 0 16px rgba(219,39,119,.4); }
-.dev-tab[data-device="device3"].active { background:#d97706; border-color:#d97706; box-shadow:0 0 16px rgba(217,119,6,.4); }
+.dev-tab { flex-shrink:0; padding:6px 14px; border-radius:99px; border:1.5px solid var(--border); background:var(--white); font-size:.72rem; font-weight:700; color:var(--sub); cursor:pointer; font-family:'Prompt',sans-serif; transition:background .2s,color .2s,border-color .2s; white-space:nowrap; }
+.dev-tab.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+.dev-tab[data-device="device2"].active { background:#db2777; border-color:#db2777; }
+.dev-tab[data-device="device3"].active { background:#d97706; border-color:#d97706; }
 
 /* ── Hero ── */
-.hero {
-  background:var(--white);
-  border-radius:28px;
-  border:1.5px solid var(--current-ring);
-  padding:36px 28px 28px;
-  text-align:center;
-  margin-bottom:14px;
-  transition:border-color .6s, background .3s;
-  position:relative;
-  overflow:hidden;
-  cursor:pointer;
-  box-shadow:var(--glow-card);
-}
-.hero::before {
-  content:'';
-  position:absolute;
-  inset:0;
-  background:radial-gradient(ellipse at 50% 45%, var(--current-ring) 0%, transparent 68%);
-  opacity:.18;
-  transition:opacity .6s, background .6s;
-  pointer-events:none;
-}
-.hero::after {
-  content:'';
-  position:absolute;
-  inset:0;
-  background:linear-gradient(to bottom, transparent 60%, var(--white) 100%);
-  pointer-events:none;
-  z-index:0;
-}
-.hero-tap {
-  position:absolute; top:14px; right:16px;
-  font-size:.76rem; font-weight:600; color:var(--current-c);
-  opacity:.5; display:flex; align-items:center; gap:5px;
-  transition:color .6s; z-index:2;
-}
-.face-ring {
-  width:110px; height:110px; border-radius:50%;
-  background:var(--current-bg);
-  border:3px solid var(--current-ring);
-  box-shadow:0 0 28px var(--current-ring), 0 0 60px var(--current-bg);
-  display:flex; align-items:center; justify-content:center;
-  margin:0 auto 18px;
-  font-size:3.4rem;
-  transition:background .6s, border-color .6s, box-shadow .6s;
-  position:relative; z-index:1;
-  animation:float 3.2s ease-in-out infinite;
-}
-.status-label {
-  font-size:1.9rem; font-weight:800;
-  color:var(--current-c);
-  text-shadow:0 0 24px var(--current-ring);
-  transition:color .6s, text-shadow .6s;
-  margin-bottom:6px;
-  position:relative; z-index:1;
-}
-.status-desc {
-  font-size:.88rem; color:var(--sub);
-  max-width:300px; margin:0 auto 22px;
-  line-height:1.6;
-  position:relative; z-index:1;
-}
-.pm-row {
-  display:flex; align-items:center; justify-content:center;
-  gap:14px; margin-bottom:10px;
-  position:relative; z-index:1;
-}
-.pm-num {
-  font-family:'DM Mono',monospace;
-  font-size:7rem; font-weight:500; line-height:1;
-  color:var(--current-c);
-  text-shadow:0 0 48px var(--current-ring), 0 0 80px var(--current-bg);
-  transition:color .6s, text-shadow .6s;
-}
+.hero { background:var(--white); border-radius:28px; border:2.5px solid var(--current-ring); padding:22px 20px 16px; text-align:center; margin-bottom:10px; transition:border-color .6s,background .3s; position:relative; overflow:hidden; cursor:pointer; }
+.hero::before { content:''; position:absolute; inset:0; background:var(--current-bg); opacity:.25; transition:opacity .6s,background .6s; pointer-events:none; }
+.hero-tap { position:absolute; top:12px; right:14px; font-size:.67rem; font-weight:600; color:var(--current-c); opacity:.6; display:flex; align-items:center; gap:5px; transition:color .6s; z-index:2; }
+.face-ring { width:100px; height:100px; border-radius:50%; background:var(--current-bg); border:4px solid var(--current-ring); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:3.2rem; transition:background .6s,border-color .6s; position:relative; z-index:1; animation:float 3s ease-in-out infinite; }
+.status-label { font-size:1.65rem; font-weight:800; color:var(--current-c); transition:color .6s; margin-bottom:2px; position:relative; z-index:1; }
+.status-desc { font-size:.82rem; color:var(--sub); max-width:280px; margin:0 auto 14px; line-height:1.5; position:relative; z-index:1; }
+.pm-row { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:4px; position:relative; z-index:1; }
+.pm-num { font-family:'DM Mono',monospace; font-size:4.2rem; font-weight:500; line-height:1; color:var(--current-c); transition:color .6s; }
 .pm-meta { text-align:left; }
-.pm-name { font-size:.85rem; font-weight:700; color:var(--sub); }
-.pm-unit { font-size:.85rem; color:var(--sub); }
-.updated { font-size:.76rem; color:var(--sub); position:relative; z-index:1; }
+.pm-name { font-size:.7rem; font-weight:600; color:var(--sub); }
+.pm-unit { font-size:.72rem; color:var(--sub); }
+.updated { font-size:.67rem; color:var(--sub); position:relative; z-index:1; }
 
 /* ── Stats Strip ── */
-.stats-strip {
-  display:grid; grid-template-columns:repeat(4,1fr);
-  background:var(--white); border-radius:18px;
-  border:1px solid var(--border);
-  margin-bottom:14px; overflow:hidden;
-  box-shadow:var(--glow-card);
-  transition:background .3s, border-color .3s;
-}
-.stat-item { padding:18px 10px; text-align:center; border-right:1px solid var(--border); }
+.stats-strip { display:grid; grid-template-columns:repeat(4,1fr); background:var(--white); border-radius:18px; border:1px solid var(--border); margin-bottom:10px; overflow:hidden; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.stat-item { padding:12px 8px; text-align:center; border-right:1px solid var(--border); }
 .stat-item:last-child { border-right:none; }
-.stat-label { font-size:.7rem; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.8px; margin-bottom:7px; }
-.stat-val { font-family:'DM Mono',monospace; font-size:1.2rem; font-weight:600; color:var(--text); }
-.stat-delta-up { color:#ef4444; }
-.stat-delta-dn { color:#22c55e; }
+.stat-label { font-size:.6rem; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.6px; margin-bottom:4px; }
+.stat-val { font-family:'DM Mono',monospace; font-size:1rem; font-weight:500; color:var(--text); }
+.stat-delta-up { color:#dc2626; } .stat-delta-dn { color:#16a34a; }
 
 /* ── Gauge ── */
-.gauge-wrap {
-  background:var(--white); border-radius:20px;
-  border:1px solid var(--border);
-  padding:22px 20px 18px;
-  margin-bottom:14px;
-  box-shadow:var(--glow-card);
-  transition:background .3s, border-color .3s;
-}
-.gauge-title { font-size:.9rem; font-weight:700; color:var(--text); margin-bottom:18px; }
-.gauge-bar-bg {
-  height:16px; border-radius:99px;
-  background:linear-gradient(to right,#22c55e 0%,#65a30d 25%,#d97706 45%,#ef4444 68%,#7c2d12 100%);
-  position:relative; margin-bottom:14px;
-  box-shadow:0 0 12px rgba(79,135,255,.1);
-}
-.gauge-pointer {
-  position:absolute; top:-12px;
-  width:38px; height:38px;
-  background:var(--white); border:3px solid var(--current-c);
-  border-radius:50%;
-  transform:translateX(-50%);
-  transition:left .8s cubic-bezier(.34,1.56,.64,1), border-color .6s, background .3s;
-  display:flex; align-items:center; justify-content:center;
-  font-size:.85rem;
-  box-shadow:0 0 14px var(--current-ring), 0 2px 8px rgba(0,0,0,.3);
-}
-.gauge-labels { display:flex; justify-content:space-between; font-size:.72rem; color:var(--sub); font-weight:600; }
-.legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
-.leg-item { display:flex; align-items:center; gap:6px; font-size:.76rem; color:var(--sub); font-weight:500; }
-.leg-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.gauge-wrap { background:var(--white); border-radius:20px; border:1px solid var(--border); padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.gauge-title { font-size:.76rem; font-weight:600; color:var(--sub); margin-bottom:11px; }
+.gauge-bar-bg { height:14px; border-radius:99px; background:linear-gradient(to right,#16a34a 0%,#65a30d 25%,#d97706 45%,#dc2626 68%,#7c2d12 100%); position:relative; margin-bottom:9px; }
+.gauge-pointer { position:absolute; top:-8px; width:30px; height:30px; background:var(--white); border:3px solid var(--current-c); border-radius:50%; transform:translateX(-50%); transition:left .8s cubic-bezier(.34,1.56,.64,1),border-color .6s,background .3s; display:flex; align-items:center; justify-content:center; font-size:.75rem; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+.gauge-labels { display:flex; justify-content:space-between; font-size:.63rem; color:var(--sub); font-weight:500; }
+.legend { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+.leg-item { display:flex; align-items:center; gap:4px; font-size:.65rem; color:var(--sub); font-weight:500; }
+.leg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 
 /* ── AI Prediction card ── */
-.predict-card {
-  background:var(--white);
-  border:1.5px solid rgba(79,135,255,.28);
-  border-radius:22px;
-  padding:22px 20px 18px;
-  margin-bottom:14px;
-  box-shadow:0 0 24px rgba(79,135,255,.08), var(--shadow);
-  transition:background .3s, border-color .3s;
-}
-.predict-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
-.predict-icon { font-size:1.3rem; }
-.predict-title { font-size:.95rem; font-weight:700; color:var(--blue); flex:1; }
-.predict-badge {
-  font-size:.8rem; font-weight:700; padding:4px 12px;
-  border-radius:99px; background:var(--raised); color:var(--sub);
-  border:1px solid var(--border);
-}
-.pred-vals { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
-.pred-val-item {
-  background:var(--raised); border-radius:14px;
-  padding:16px 10px; text-align:center;
-  border:1px solid var(--border);
-}
-.pred-val-num { font-family:'DM Mono',monospace; font-size:1.7rem; font-weight:600; color:var(--blue); }
-.pred-val-label { font-size:.74rem; color:var(--sub); font-weight:600; margin-top:5px; line-height:1.3; }
-.conf-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-.conf-label { font-size:.8rem; color:var(--sub); font-weight:600; white-space:nowrap; }
-.conf-bar-bg { flex:1; height:8px; border-radius:99px; background:var(--raised); overflow:hidden; }
-.conf-bar { height:100%; border-radius:99px; background:linear-gradient(to right,#4f87ff,#06d6e0); transition:width .8s cubic-bezier(.34,1.56,.64,1); }
-.conf-pct { font-family:'DM Mono',monospace; font-size:.85rem; font-weight:700; color:var(--blue); white-space:nowrap; min-width:38px; text-align:right; }
-.pred-footer { display:flex; justify-content:space-between; font-size:.74rem; color:var(--sub); }
-.pred-nodata { text-align:center; padding:18px; font-size:.9rem; color:var(--sub); }
-.pred-devices { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
-.pred-dev-row { display:flex; align-items:center; gap:10px; font-size:.82rem; }
+.predict-card { background:var(--white); border:1.5px solid var(--blue); border-radius:20px; padding:14px 16px 12px; margin-bottom:10px; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.predict-header { display:flex; align-items:center; gap:8px; margin-bottom:11px; }
+.predict-icon { font-size:1.1rem; }
+.predict-title { font-size:.8rem; font-weight:700; color:var(--blue); flex:1; }
+.predict-badge { font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:99px; background:var(--raised); color:var(--sub); border:1px solid var(--border); }
+.pred-vals { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+.pred-val-item { background:var(--raised); border-radius:12px; padding:10px 8px; text-align:center; border:1px solid var(--border); }
+.pred-val-num { font-family:'DM Mono',monospace; font-size:1.45rem; font-weight:500; color:var(--blue); }
+.pred-val-label { font-size:.6rem; color:var(--sub); font-weight:600; margin-top:2px; line-height:1.3; }
+.conf-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.conf-label { font-size:.65rem; color:var(--sub); font-weight:600; white-space:nowrap; }
+.conf-bar-bg { flex:1; height:8px; border-radius:99px; background:var(--border); overflow:hidden; }
+.conf-bar { height:100%; border-radius:99px; background:linear-gradient(to right,#4f87ff,#0dbcb9); transition:width .8s cubic-bezier(.34,1.56,.64,1); }
+.conf-pct { font-family:'DM Mono',monospace; font-size:.72rem; font-weight:600; color:var(--blue); white-space:nowrap; min-width:36px; text-align:right; }
+.pred-footer { display:flex; justify-content:space-between; font-size:.63rem; color:var(--sub); }
+.pred-nodata { text-align:center; padding:12px; font-size:.75rem; color:var(--sub); }
+
+/* ── Per-device predict breakdown ── */
+.pred-devices { display:flex; flex-direction:column; gap:5px; margin-top:8px; }
+.pred-dev-row { display:flex; align-items:center; gap:8px; font-size:.7rem; }
 .pred-dev-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.pred-dev-name { font-weight:700; min-width:46px; }
+.pred-dev-name { font-weight:600; min-width:42px; }
 .pred-dev-vals { font-family:'DM Mono',monospace; color:var(--sub); flex:1; }
-.pred-dev-r2 { font-size:.74rem; color:var(--sub); }
+.pred-dev-r2 { font-size:.62rem; color:var(--sub); }
 
 /* ── Tiles ── */
-.tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px; }
-.tile {
-  background:var(--white); border:1px solid var(--border);
-  border-radius:18px; padding:20px 12px 16px;
-  text-align:center; cursor:pointer;
-  transition:transform .2s, box-shadow .2s, background .3s, border-color .3s;
-  position:relative; box-shadow:var(--glow-card);
-}
-.tile:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); }
-.tile-tap { position:absolute; bottom:10px; right:12px; font-size:.7rem; color:var(--blue); opacity:.5; font-weight:600; }
-.tile-emoji { font-size:1.6rem; margin-bottom:9px; }
-.tile-val { font-family:'DM Mono',monospace; font-size:1.5rem; font-weight:600; color:var(--text); }
-.tile-label { font-size:.76rem; color:var(--sub); margin-top:5px; font-weight:500; }
+.tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-bottom:10px; }
+.tile { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:14px 10px 10px; text-align:center; cursor:pointer; transition:transform .2s,box-shadow .2s,background .3s,border-color .3s; position:relative; }
+.tile:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+.tile-tap { position:absolute; bottom:7px; right:10px; font-size:.58rem; color:var(--blue); opacity:.5; font-weight:600; }
+.tile-emoji { font-size:1.4rem; margin-bottom:5px; }
+.tile-val { font-family:'DM Mono',monospace; font-size:1.25rem; font-weight:500; color:var(--text); }
+.tile-label { font-size:.63rem; color:var(--sub); margin-top:3px; font-weight:500; }
 
 /* ── Advice ── */
-.advice-card {
-  background:var(--current-bg);
-  border:1.5px solid var(--current-ring);
-  border-radius:20px;
-  padding:22px 20px 18px;
-  transition:background .6s, border-color .6s;
-  margin-bottom:14px;
-  box-shadow:0 0 24px var(--current-bg);
-}
-.advice-header { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-.advice-icon { font-size:1.3rem; }
-.advice-title { font-size:.96rem; font-weight:700; color:var(--current-c); transition:color .6s; }
-.advice-list { list-style:none; display:flex; flex-direction:column; gap:10px; }
-.advice-list li { display:flex; align-items:flex-start; gap:10px; font-size:.91rem; color:var(--text); line-height:1.55; }
-.advice-list li::before { content:'✓'; font-weight:800; color:var(--current-c); flex-shrink:0; margin-top:1px; transition:color .6s; }
+.advice-card { background:var(--current-bg); border:1.5px solid var(--current-ring); border-radius:20px; padding:14px 16px 12px; transition:background .6s,border-color .6s; margin-bottom:10px; }
+.advice-header { display:flex; align-items:center; gap:8px; margin-bottom:9px; }
+.advice-icon { font-size:1.1rem; }
+.advice-title { font-size:.8rem; font-weight:700; color:var(--current-c); transition:color .6s; }
+.advice-list { list-style:none; display:flex; flex-direction:column; gap:6px; }
+.advice-list li { display:flex; align-items:flex-start; gap:8px; font-size:.78rem; color:var(--text); line-height:1.45; }
+.advice-list li::before { content:'✓'; font-weight:700; color:var(--current-c); flex-shrink:0; margin-top:1px; transition:color .6s; }
 
 /* ── Chart card ── */
-.chart-card {
-  background:var(--white); border:1px solid var(--border);
-  border-radius:20px; padding:22px 20px 18px;
-  box-shadow:var(--glow-card);
-  transition:background .3s, border-color .3s;
-}
-.chart-title { font-size:.9rem; font-weight:700; color:var(--text); margin-bottom:14px; }
-.chart-wrap { height:110px; }
+.chart-card { background:var(--white); border:1px solid var(--border); border-radius:20px; padding:14px 16px 12px; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.chart-title { font-size:.76rem; font-weight:600; color:var(--sub); margin-bottom:11px; }
+.chart-wrap { height:100px; }
 
 /* ── Export btn ── */
-.export-btn {
-  background:var(--raised); border:1px solid var(--border);
-  border-radius:12px; padding:8px 16px;
-  font-size:.8rem; font-weight:600; color:var(--sub);
-  cursor:pointer; font-family:'Prompt',sans-serif;
-  transition:background .15s, border-color .3s;
-  display:inline-flex; align-items:center; gap:6px;
-}
+.export-btn { background:var(--raised); border:1px solid var(--border); border-radius:12px; padding:6px 14px; font-size:.7rem; font-weight:600; color:var(--sub); cursor:pointer; font-family:'Prompt',sans-serif; transition:background .15s; display:inline-flex; align-items:center; gap:5px; }
 .export-btn:hover { background:var(--border); }
 
 /* ── More btn ── */
-.more-btn {
-  width:100%; background:var(--white);
-  border:1px solid rgba(79,135,255,.25);
-  border-radius:16px; padding:16px;
-  font-size:.95rem; font-weight:600; color:var(--blue);
-  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px;
-  transition:background .2s, box-shadow .2s, border-color .3s;
-  margin-bottom:14px; font-family:'Prompt',sans-serif;
-  box-shadow:0 0 16px rgba(79,135,255,.08);
-}
-.more-btn:hover { background:var(--raised); box-shadow:0 0 24px rgba(79,135,255,.15); }
+.more-btn { width:100%; background:var(--white); border:1px solid var(--border); border-radius:16px; padding:12px; font-size:.82rem; font-weight:600; color:var(--blue); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:background .2s,box-shadow .2s,border-color .3s; margin-bottom:10px; font-family:'Prompt',sans-serif; }
+.more-btn:hover { background:var(--raised); box-shadow:var(--shadow); }
 
 /* ── Settings ── */
-.settings-section { margin-bottom:18px; }
-.settings-card {
-  background:var(--white); border:1px solid var(--border);
-  border-radius:20px; padding:24px 20px 18px;
-  box-shadow:var(--glow-card);
-  transition:background .3s, border-color .3s;
-}
-.settings-title {
-  font-size:.76rem; font-weight:700; text-transform:uppercase;
-  letter-spacing:1.2px; color:var(--sub);
-  margin-bottom:18px;
-  display:flex; align-items:center; gap:8px;
-}
-.setting-row {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:14px 0; border-bottom:1px solid var(--border);
-}
+.settings-section { margin-bottom:16px; }
+.settings-card { background:var(--white); border:1px solid var(--border); border-radius:20px; padding:18px 18px 14px; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.settings-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--sub); margin-bottom:14px; display:flex; align-items:center; gap:7px; }
+.setting-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
 .setting-row:last-child { border-bottom:none; }
 .setting-info { flex:1; }
-.setting-name { font-size:.95rem; font-weight:600; }
-.setting-desc { font-size:.8rem; color:var(--sub); margin-top:3px; line-height:1.4; }
-.toggle { position:relative; display:inline-block; width:48px; height:26px; }
+.setting-name { font-size:.82rem; font-weight:600; }
+.setting-desc { font-size:.68rem; color:var(--sub); margin-top:2px; }
+.toggle { position:relative; display:inline-block; width:44px; height:24px; }
 .toggle input { opacity:0; width:0; height:0; }
-.slider {
-  position:absolute; cursor:pointer; inset:0;
-  background:var(--raised); border:1px solid var(--border);
-  border-radius:99px; transition:background .3s;
-}
-.slider:before {
-  content:''; position:absolute; width:20px; height:20px;
-  left:2px; bottom:2px; background:#fff;
-  border-radius:50%; transition:transform .3s;
-}
-input:checked + .slider { background:var(--blue); border-color:var(--blue); }
-input:checked + .slider:before { transform:translateX(22px); }
-.thresh-row { padding:12px 0; }
-.thresh-row-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; }
-.thresh-val-display { font-family:'DM Mono',monospace; font-size:1.2rem; font-weight:700; color:var(--current-c); transition:color .6s; }
-input[type=range] {
-  width:100%; height:6px; border-radius:99px;
-  outline:none; cursor:pointer; appearance:none;
-  background:linear-gradient(to right, var(--current-c) 0%, var(--current-c) var(--pct,30%), var(--raised) var(--pct,30%), var(--raised) 100%);
-}
-input[type=range]::-webkit-slider-thumb {
-  appearance:none; width:22px; height:22px;
-  background:var(--white); border:3px solid var(--current-c);
-  border-radius:50%; box-shadow:0 0 10px var(--current-ring), var(--shadow);
-}
+.slider { position:absolute; cursor:pointer; inset:0; background:var(--border); border-radius:99px; transition:background .3s; }
+.slider:before { content:''; position:absolute; width:18px; height:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:transform .3s; }
+input:checked + .slider { background:var(--blue); }
+input:checked + .slider:before { transform:translateX(20px); }
+.thresh-row { padding:10px 0; }
+.thresh-row-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+.thresh-val-display { font-family:'DM Mono',monospace; font-size:1.1rem; font-weight:600; color:var(--current-c); transition:color .6s; }
+input[type=range] { width:100%; height:6px; border-radius:99px; outline:none; cursor:pointer; appearance:none; background:linear-gradient(to right,var(--current-c) 0%,var(--current-c) var(--pct,30%),var(--border) var(--pct,30%),var(--border) 100%); }
+input[type=range]::-webkit-slider-thumb { appearance:none; width:20px; height:20px; background:var(--white); border:3px solid var(--current-c); border-radius:50%; box-shadow:var(--shadow); }
 
 /* ── Alert toast ── */
-.alert-toast {
-  position:fixed; top:16px; left:50%;
-  transform:translateX(-50%) translateY(-120px);
-  z-index:3000; background:#b91c1c; color:#fff;
-  border-radius:18px; padding:14px 20px;
-  display:flex; align-items:center; gap:10px;
-  box-shadow:0 8px 36px rgba(185,28,28,.6);
-  transition:transform .4s cubic-bezier(.34,1.56,.64,1);
-  max-width:calc(100vw - 32px);
-  font-size:.92rem; font-weight:600;
-}
+.alert-toast { position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-120px); z-index:3000; background:#dc2626; color:#fff; border-radius:16px; padding:12px 18px; display:flex; align-items:center; gap:10px; box-shadow:0 8px 32px rgba(220,38,38,.45); transition:transform .4s cubic-bezier(.34,1.56,.64,1); max-width:calc(100vw - 32px); font-size:.82rem; font-weight:600; }
 .alert-toast.show { transform:translateX(-50%) translateY(0); }
-.alert-close {
-  background:rgba(255,255,255,.2); border:none; color:#fff;
-  border-radius:99px; width:26px; height:26px;
-  cursor:pointer; font-size:.75rem;
-  display:flex; align-items:center; justify-content:center; flex-shrink:0;
-}
+.alert-close { background:rgba(255,255,255,.25); border:none; color:#fff; border-radius:99px; width:22px; height:22px; cursor:pointer; font-size:.7rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
 /* ── Bottom nav ── */
-.bottom-nav {
-  position:fixed; bottom:0; left:0; right:0;
-  height:var(--nav-h);
-  background:var(--nav-bg);
-  border-top:1px solid var(--border);
-  backdrop-filter:blur(24px);
-  -webkit-backdrop-filter:blur(24px);
-  display:flex; z-index:200;
-  padding-bottom:env(safe-area-inset-bottom,0);
-  transition:background .3s, border-color .3s;
-}
-.nav-item {
-  flex:1; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:4px;
-  background:none; border:none; cursor:pointer;
-  padding:8px 4px 6px;
-  font-family:'Prompt',sans-serif;
-  transition:transform .15s;
-  -webkit-tap-highlight-color:transparent;
-}
+.bottom-nav { position:fixed; bottom:0; left:0; right:0; height:var(--nav-h); background:var(--nav-bg); border-top:1px solid var(--border); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); display:flex; z-index:200; padding-bottom:env(safe-area-inset-bottom,0); transition:background .3s,border-color .3s; }
+.nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:none; border:none; cursor:pointer; padding:8px 4px 6px; font-family:'Prompt',sans-serif; transition:transform .15s; -webkit-tap-highlight-color:transparent; }
 .nav-item:active { transform:scale(.9); }
-.nav-emoji { font-size:1.4rem; line-height:1; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
+.nav-emoji { font-size:1.35rem; line-height:1; transition:transform .25s cubic-bezier(.34,1.56,.64,1); display:flex; align-items:center; justify-content:center; }
 .nav-item.active .nav-emoji { transform:translateY(-3px) scale(1.15); }
-.nav-label { font-size:.7rem; font-weight:600; color:var(--sub); transition:color .2s; }
+.nav-label { font-size:.6rem; font-weight:600; color:var(--sub); transition:color .2s; }
 .nav-item.active .nav-label { color:var(--blue); }
-.nav-pip { width:4px; height:4px; border-radius:50%; background:var(--blue); opacity:0; transition:opacity .2s; box-shadow:0 0 8px var(--blue); }
+.nav-pip { width:5px; height:5px; border-radius:50%; background:var(--blue); opacity:0; transition:opacity .2s; }
 .nav-item.active .nav-pip { opacity:1; }
 
 /* ── Modal ── */
-.overlay {
-  position:fixed; inset:0; z-index:1000;
-  background:rgba(3,7,18,.7);
-  backdrop-filter:blur(10px);
-  display:flex; align-items:flex-end; justify-content:center;
-  opacity:0; pointer-events:none; transition:opacity .25s; padding:0;
-}
+.overlay { position:fixed; inset:0; z-index:1000; background:rgba(15,23,42,.5); backdrop-filter:blur(8px); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; padding:0; }
 .overlay.open { opacity:1; pointer-events:all; }
-@media(min-width:480px){ .overlay { align-items:center; padding:16px; } }
-.modal {
-  background:var(--white); width:100%; max-width:700px;
-  max-height:92vh; overflow-y:auto;
-  border-radius:28px 28px 0 0;
-  transform:translateY(40px);
-  transition:transform .35s cubic-bezier(.16,1,.3,1), background .3s;
-  padding:0;
-  border:1px solid var(--border);
-}
-@media(min-width:480px){ .modal { border-radius:28px; transform:translateY(20px) scale(.97); } }
+@media(min-width:480px){ .overlay{ align-items:center; padding:16px; } }
+.modal { background:var(--white); width:100%; max-width:680px; max-height:92vh; overflow-y:auto; border-radius:28px 28px 0 0; transform:translateY(40px); transition:transform .35s cubic-bezier(.16,1,.3,1),background .3s; padding:0; }
+@media(min-width:480px){ .modal{ border-radius:28px; transform:translateY(20px) scale(.97); } }
 .overlay.open .modal { transform:none; }
-.modal::-webkit-scrollbar { width:4px; }
-.modal::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
-.modal-drag { width:44px; height:5px; background:var(--border); border-radius:99px; margin:14px auto 0; }
-@media(min-width:480px){ .modal-drag { display:none; } }
-.modal-head {
-  display:flex; align-items:flex-start; justify-content:space-between;
-  padding:22px 22px 16px; border-bottom:1px solid var(--border);
-  position:sticky; top:0; background:var(--white); z-index:10;
-  border-radius:28px 28px 0 0;
-  transition:background .3s, border-color .3s;
-}
-.modal-title { font-size:1.15rem; font-weight:800; }
-.modal-sub { font-size:.8rem; color:var(--sub); margin-top:3px; }
-.modal-close {
-  width:36px; height:36px; border-radius:10px;
-  background:var(--raised); border:1px solid var(--border);
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer; font-size:.85rem; color:var(--sub); flex-shrink:0;
-  transition:background .15s, color .15s, border-color .3s;
-}
-.modal-close:hover { background:rgba(239,68,68,.15); color:var(--rose); border-color:rgba(239,68,68,.3); }
-.modal-body { padding:22px 22px 30px; }
-.msec { margin-bottom:24px; }
-.msec-title {
-  font-size:.7rem; font-weight:700; text-transform:uppercase;
-  letter-spacing:1.2px; color:var(--sub);
-  margin-bottom:12px; display:flex; align-items:center; gap:6px;
-}
-.mfield-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
-.mfield-card {
-  background:var(--raised); border:1px solid var(--border);
-  border-radius:14px; padding:16px 14px 12px;
-  position:relative; overflow:hidden;
-  transition:background .3s, border-color .3s;
-}
-.mfield-bar { position:absolute; top:0; left:0; right:0; height:3px; border-radius:14px 14px 0 0; }
-.mfield-icon { font-size:1.1rem; margin-bottom:5px; }
-.mfield-name { font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--sub); margin-bottom:4px; }
-.mfield-val { font-family:'DM Mono',monospace; font-size:1.5rem; font-weight:600; }
-.mfield-unit { font-size:.64rem; color:var(--sub); margin-top:2px; }
-.mfield-delta { font-size:.72rem; font-weight:700; margin-top:3px; }
-.mfield-spark { margin-top:8px; height:32px; }
-.mfield-spark canvas { width:100%!important; height:32px!important; }
-.mchart-wrap { height:180px; }
-.mtable-wrap { overflow-x:auto; border-radius:14px; border:1px solid var(--border); transition:border-color .3s; }
-.mtable { width:100%; border-collapse:collapse; font-size:.84rem; }
-.mtable th {
-  text-align:left; padding:11px 13px;
-  font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px;
-  color:var(--sub); border-bottom:2px solid var(--border);
-  position:sticky; top:0; background:var(--white);
-  transition:background .3s, border-color .3s;
-}
-.mtable td { padding:11px 13px; border-bottom:1px solid var(--border); transition:border-color .3s; }
+.modal::-webkit-scrollbar{ width:4px; } .modal::-webkit-scrollbar-thumb{ background:var(--border); border-radius:99px; }
+.modal-drag { width:40px; height:4px; background:var(--border); border-radius:99px; margin:12px auto 0; }
+@media(min-width:480px){ .modal-drag{ display:none; } }
+.modal-head { display:flex; align-items:flex-start; justify-content:space-between; padding:18px 20px 14px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--white); z-index:10; border-radius:28px 28px 0 0; transition:background .3s,border-color .3s; }
+.modal-title { font-size:1.05rem; font-weight:800; }
+.modal-sub { font-size:.7rem; color:var(--sub); margin-top:2px; }
+.modal-close { width:32px; height:32px; border-radius:10px; background:var(--raised); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:.8rem; color:var(--sub); flex-shrink:0; transition:background .15s,color .15s,border-color .3s; }
+.modal-close:hover { background:#fee2e2; color:var(--rose); border-color:#fca5a5; }
+.modal-body { padding:18px 20px 26px; }
+.msec { margin-bottom:20px; }
+.msec-title { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--sub); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.mfield-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:9px; }
+.mfield-card { background:var(--raised); border:1px solid var(--border); border-radius:13px; padding:12px 12px 9px; position:relative; overflow:hidden; transition:background .3s,border-color .3s; }
+.mfield-bar { position:absolute; top:0; left:0; right:0; height:3px; border-radius:13px 13px 0 0; }
+.mfield-icon { font-size:1rem; margin-bottom:3px; }
+.mfield-name { font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--sub); margin-bottom:3px; }
+.mfield-val { font-family:'DM Mono',monospace; font-size:1.35rem; font-weight:500; }
+.mfield-unit { font-size:.58rem; color:var(--sub); margin-top:1px; }
+.mfield-delta { font-size:.65rem; font-weight:700; margin-top:2px; }
+.mfield-spark { margin-top:7px; height:30px; }
+.mfield-spark canvas { width:100%!important; height:30px!important; }
+.mchart-wrap { height:170px; }
+.mtable-wrap { overflow-x:auto; border-radius:13px; border:1px solid var(--border); transition:border-color .3s; }
+.mtable { width:100%; border-collapse:collapse; font-size:.76rem; }
+.mtable th { text-align:left; padding:8px 10px; font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--sub); border-bottom:2px solid var(--border); position:sticky; top:0; background:var(--white); transition:background .3s,border-color .3s; }
+.mtable td { padding:8px 10px; border-bottom:1px solid var(--border); transition:border-color .3s; }
 .mtable tr:last-child td { border-bottom:none; }
 .mtable tr:hover td { background:var(--raised); }
-.mtable td:first-child { font-family:'DM Mono',monospace; color:var(--sub); font-size:.76rem; }
+.mtable td:first-child { font-family:'DM Mono',monospace; color:var(--sub); font-size:.68rem; }
 .td-val { font-family:'DM Mono',monospace; font-weight:600; }
-.dev-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-.dev-tag { display:inline-flex; align-items:center; gap:7px; border-radius:99px; padding:6px 15px; font-size:.8rem; font-weight:700; }
-.dev-ts { font-family:'DM Mono',monospace; font-size:.72rem; color:var(--sub); }
-.dev-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
-.hc-card { background:var(--raised); border:1px solid var(--border); border-radius:16px; padding:18px 16px 12px; transition:background .3s, border-color .3s; }
-.hc-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
-.hc-name { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--sub); margin-bottom:4px; }
-.hc-val { font-family:'DM Mono',monospace; font-size:1.65rem; font-weight:600; }
-.hc-stats { text-align:right; font-family:'DM Mono',monospace; font-size:.64rem; color:var(--sub); line-height:1.8; }
-.hc-chart { height:72px; }
-.wdetail-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; }
+.dev-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.dev-tag { display:inline-flex; align-items:center; gap:6px; border-radius:99px; padding:4px 13px; font-size:.7rem; font-weight:700; }
+.dev-ts { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--sub); }
+.dev-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }
+.hc-card { background:var(--raised); border:1px solid var(--border); border-radius:14px; padding:14px 14px 10px; transition:background .3s,border-color .3s; }
+.hc-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+.hc-name { font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--sub); margin-bottom:3px; }
+.hc-val { font-family:'DM Mono',monospace; font-size:1.45rem; font-weight:500; }
+.hc-stats { text-align:right; font-family:'DM Mono',monospace; font-size:.6rem; color:var(--sub); line-height:1.7; }
+.hc-chart { height:66px; }
+.wdetail-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:9px; }
 
 /* ── 3D twin ── */
-.twin-card { background:var(--white); border-radius:20px; border:1px solid var(--border); overflow:hidden; margin-bottom:14px; box-shadow:var(--glow-card); transition:background .3s, border-color .3s; }
-.twin-header { padding:18px 20px 10px; }
-.twin-viewer { width:100%; height:300px; background:var(--raised); }
-.twin-btns { padding:12px 16px 16px; display:flex; gap:8px; overflow-x:auto; }
-.twin-btn {
-  background:var(--raised); border:1px solid var(--border);
-  border-radius:12px; padding:9px 18px;
-  font-size:.82rem; font-weight:600; color:var(--blue);
-  cursor:pointer; white-space:nowrap;
-  font-family:'Prompt',sans-serif; transition:background .15s;
-}
+.twin-card { background:var(--white); border-radius:20px; border:1px solid var(--border); overflow:hidden; margin-bottom:10px; box-shadow:var(--shadow); transition:background .3s,border-color .3s; }
+.twin-header { padding:14px 16px 8px; }
+.twin-viewer { width:100%; height:280px; background:var(--raised); }
+.twin-btns { padding:10px 14px 12px; display:flex; gap:8px; overflow-x:auto; }
+.twin-btn { background:var(--raised); border:1px solid var(--border); border-radius:12px; padding:6px 14px; font-size:.7rem; font-weight:600; color:var(--blue); cursor:pointer; white-space:nowrap; font-family:'Prompt',sans-serif; transition:background .15s; }
 .twin-btn:hover { background:var(--border); }
-.twin-btn.ene  { background:rgba(14,165,233,.12); color:#38bdf8; border-color:rgba(14,165,233,.3); }
-.twin-btn.dev2 { background:rgba(219,39,119,.12); color:#f472b6; border-color:rgba(219,39,119,.3); }
-.twin-btn.dev3 { background:rgba(245,158,11,.12); color:#fbbf24; border-color:rgba(245,158,11,.3); }
-[data-theme="light"] .twin-btn.ene  { background:#e0f2fe; color:#0284c7; border-color:#bae6fd; }
-[data-theme="light"] .twin-btn.dev2 { background:#fce7f3; color:#db2777; border-color:#fbcfe8; }
-[data-theme="light"] .twin-btn.dev3 { background:#fef3c7; color:#d97706; border-color:#fcd34d; }
+.twin-btn.ene  { background:#e0f2fe; color:#0284c7; border-color:#bae6fd; }
+.twin-btn.dev2 { background:#fce7f3; color:#db2777; border-color:#fbcfe8; }
+.twin-btn.dev3 { background:#fef3c7; color:#d97706; border-color:#fcd34d; }
+[data-theme="dark"] .twin-btn.ene  { background:#0c2e4a; color:#38bdf8; border-color:#0369a1; }
+[data-theme="dark"] .twin-btn.dev2 { background:#3d0020; color:#f472b6; border-color:#9d174d; }
+[data-theme="dark"] .twin-btn.dev3 { background:#3d2500; color:#fbbf24; border-color:#92400e; }
 
-.Hotspot {
-  background:var(--blue); border-radius:50%;
-  border:2px solid white; width:18px; height:18px;
-  box-shadow:0 0 12px var(--blue), 0 2px 8px rgba(0,0,0,.4);
-  cursor:pointer; transition:transform .2s;
-}
+.Hotspot { background:var(--blue); border-radius:50%; border:2px solid white; width:16px; height:16px; box-shadow:0 2px 8px rgba(0,0,0,.3); cursor:pointer; transition:transform .2s; }
 .Hotspot:hover { transform:scale(1.3); }
-.HotspotAnnotation {
-  background:var(--white); border-radius:8px;
-  box-shadow:var(--shadow); color:var(--text);
-  font-family:'Prompt',sans-serif; font-size:.72rem; font-weight:700;
-  padding:5px 12px; position:absolute;
-  top:24px; left:50%; transform:translateX(-50%);
-  white-space:nowrap; border:1px solid var(--border);
-}
+.HotspotAnnotation { background:var(--white); border-radius:6px; box-shadow:var(--shadow); color:var(--text); font-family:'Prompt',sans-serif; font-size:.65rem; font-weight:700; padding:4px 10px; position:absolute; top:22px; left:50%; transform:translateX(-50%); white-space:nowrap; border:1px solid var(--border); }
 
-/* ── Section head ── */
-.section-head {
-  font-size:.8rem; font-weight:700;
-  color:var(--sub); text-transform:uppercase; letter-spacing:1.2px;
-  margin-bottom:18px; margin-top:4px;
-  padding-left:14px; position:relative;
-}
-.section-head::before {
-  content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
-  width:4px; height:16px; border-radius:2px;
-  background:linear-gradient(to bottom, var(--blue), var(--teal));
-  box-shadow:0 0 8px rgba(79,135,255,.5);
-}
-
-/* ── Responsive 2-col ── */
+/* ── Responsive desktop 2-col ── */
 @media(min-width:768px){
-  .page { max-width:1120px; padding:24px 24px; }
-  .home-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
-  .home-col-left > * { margin-bottom:14px; }
-  .home-col-right > * { margin-bottom:14px; }
+  .page { max-width:1100px; padding:20px 20px; }
+  .home-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
+  .home-col-left > * { margin-bottom:10px; }
+  .home-col-right > * { margin-bottom:10px; }
   .home-col-left > *:last-child, .home-col-right > *:last-child { margin-bottom:0; }
-  .twin-viewer { height:400px; }
+  .twin-viewer { height:380px; }
 }
 
-/* ── Animations ── */
-@keyframes blink  { 0%,100%{opacity:1} 50%{opacity:.25} }
-@keyframes float  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
-@keyframes pulse  { 0%,100%{box-shadow:0 0 28px var(--current-ring),0 0 60px var(--current-bg)} 50%{box-shadow:0 0 42px var(--current-ring),0 0 80px var(--current-bg)} }
+/* Animations */
+@keyframes blink  { 0%,100%{opacity:1}50%{opacity:.3} }
+@keyframes float  { 0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none} }
+@keyframes spin   { to{transform:rotate(360deg)} }
 .fade { animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both; }
-.face-ring { animation:float 3.2s ease-in-out infinite, pulse 3.2s ease-in-out infinite; }
-.loading { display:flex; align-items:center; justify-content:center; gap:6px; padding:28px; font-size:1.3rem; }
-@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.loading { display:flex; align-items:center; justify-content:center; gap:6px; padding:24px; font-size:1.2rem; }
+@keyframes bob { 0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)} }
 .loading span { animation:bob .7s ease-in-out infinite; }
 .loading span:nth-child(2) { animation-delay:.15s; }
 .loading span:nth-child(3) { animation-delay:.3s; }
+.section-head { font-size:.78rem; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; margin-top:4px; }
 
-/* ── Arc Gauge (Health App Style) ── */
-.gauge-container {
-  position:relative;
-  width:230px;
-  margin:0 auto 6px;
+/* ── Skeleton shimmer ── */
+@keyframes shimmer {
+  0%   { background-position:-200% 0; }
+  100% { background-position: 200% 0; }
 }
-.arc-svg { width:100%; height:auto; display:block; }
-.arc-track { stroke:var(--raised); }
-[data-theme="light"] .arc-track { stroke:rgba(0,0,0,.08); }
+.skel {
+  background: linear-gradient(90deg, var(--raised) 25%, rgba(255,255,255,.06) 50%, var(--raised) 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 8px; color: transparent !important; pointer-events:none;
+}
+[data-theme="dark"] .skel {
+  background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.1) 50%, rgba(255,255,255,.04) 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ── Arc gauge ── */
+.gauge-container { position:relative; width:220px; margin:0 auto 4px; }
+.arc-svg { width:100%; display:block; }
+.arc-track { stroke:var(--border); }
 .arc-fill {
-  stroke-dasharray:302;
-  stroke-dashoffset:302;
-  transition:stroke-dashoffset 1s cubic-bezier(.34,1.56,.64,1);
+  stroke-dasharray: 302;
+  stroke-dashoffset: 302;
+  transition: stroke-dashoffset .9s cubic-bezier(.34,1.56,.64,1);
 }
-.arc-needle {
-  fill:#fff; stroke:var(--current-c); stroke-width:3;
-  filter:drop-shadow(0 2px 8px rgba(0,0,0,.5));
-  transition:cx 1s cubic-bezier(.34,1.56,.64,1), cy 1s cubic-bezier(.34,1.56,.64,1), stroke .6s;
-}
-.arc-num-overlay {
-  position:absolute; top:50%; left:50%;
-  transform:translate(-50%,-50%); text-align:center; pointer-events:none;
-}
-.arc-gauge-label-row {
-  display:flex; justify-content:space-between;
-  padding:0 6px; font-size:.62rem; color:var(--sub); margin-top:2px;
-}
+.arc-needle { fill:var(--text); transition:cx .9s cubic-bezier(.34,1.56,.64,1), cy .9s cubic-bezier(.34,1.56,.64,1); }
+.arc-num-overlay { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; }
+.arc-num-overlay .pm-num { font-family:'DM Mono',monospace; font-size:2.4rem; font-weight:700; color:var(--text); line-height:1; transition:color .6s; }
+.arc-num-overlay .pm-meta { display:flex; align-items:center; gap:5px; justify-content:center; margin-top:2px; }
+.arc-num-overlay .pm-name { font-size:.65rem; font-weight:600; color:var(--sub); }
+.arc-num-overlay .pm-unit { font-size:.6rem; color:var(--sub); }
+.arc-gauge-label-row { display:flex; justify-content:space-between; font-size:.58rem; color:var(--sub); padding:0 14px; margin-top:-2px; }
 
-/* Override pm-num size inside gauge */
-.gauge-container .pm-num {
-  font-size:3.6rem !important;
-  text-shadow:0 0 32px var(--current-ring) !important;
-}
-.gauge-container .pm-meta { display:flex; align-items:center; justify-content:center; gap:5px; margin-top:3px; }
-.gauge-container .pm-name { font-size:.78rem; font-weight:700; color:var(--sub); }
-.gauge-container .pm-unit { font-size:.78rem; color:var(--sub); }
+/* ── AQI badge ── */
+.aqi-badge { display:inline-flex; align-items:center; gap:5px; padding:5px 13px; border-radius:99px; font-size:.72rem; font-weight:700; margin:6px auto 0; background:var(--current-bg); color:var(--current-c); border:1.5px solid var(--current-ring); transition:background .6s,color .6s,border-color .6s; }
 
-/* ── Stats strip overrides (card style) ── */
-.stats-strip {
-  display:grid !important;
-  grid-template-columns:repeat(4,1fr) !important;
-  background:transparent !important;
-  border:none !important;
-  gap:9px !important;
-  overflow:visible !important;
-  padding:0 !important;
-}
-.stat-item {
-  background:var(--white) !important;
-  border:1px solid var(--border) !important;
-  border-radius:16px !important;
-  padding:14px 8px 12px !important;
-  text-align:center !important;
-  border-right:none !important;
-  box-shadow:var(--glow-card) !important;
-  transition:transform .2s, box-shadow .2s, background .3s !important;
-}
-.stat-item:hover { transform:translateY(-3px) !important; box-shadow:var(--shadow-md) !important; }
-.stat-icon-badge {
-  font-size:1.1rem; margin-bottom:5px;
-  display:block;
-}
-.stat-sub-unit {
-  font-size:.58rem; color:var(--sub); margin-top:2px; line-height:1;
-}
-
-/* ── Predict card: gradient top bar ── */
-.predict-card { position:relative; overflow:hidden; }
-.predict-card::before {
-  content:''; position:absolute; top:0; left:0; right:0; height:3px;
-  background:linear-gradient(to right, #4f87ff, #06d6e0, #8b5cf6);
-  border-radius:22px 22px 0 0;
-}
-
-/* ── Ripple effect ── */
-.ripple-el { position:relative !important; overflow:hidden !important; }
-.ripple {
-  position:absolute; border-radius:50%;
-  background:rgba(255,255,255,.22);
-  transform:scale(0);
-  animation:ripple-anim .55s linear;
-  pointer-events:none; z-index:99;
-}
-@keyframes ripple-anim { to { transform:scale(4); opacity:0; } }
-
-/* ── Number counter pop ── */
-@keyframes num-pop {
-  0%  { transform:scale(1); }
-  45% { transform:scale(1.07); }
-  100%{ transform:scale(1); }
-}
-.num-pop { animation:num-pop .35s cubic-bezier(.34,1.56,.64,1); }
-
-/* ── Hero improvements ── */
-.hero { cursor:pointer; }
-.hero:hover { border-color:var(--current-c) !important; }
-.hero:active { transform:scale(.99); }
-
-/* ── Bottom nav: pill indicator ── */
-.nav-item.active .nav-label { font-weight:700; }
-.nav-pip { width:18px !important; height:4px !important; border-radius:2px !important; }
-
-/* ── Sensor Status Cards (horizontal sparkline) ── */
-.sensor-cards {
-  display:grid; grid-template-columns:repeat(3,1fr);
-  gap:10px; margin-bottom:14px;
-}
-.sensor-card {
-  background:var(--white); border:1px solid var(--border);
-  border-radius:18px; padding:14px 14px 10px;
-  cursor:pointer; overflow:hidden; position:relative;
-  box-shadow:var(--glow-card);
-  transition:transform .2s, box-shadow .2s, background .3s, border-color .3s;
-}
-.sensor-card::before {
-  content:''; position:absolute; top:0; left:0; right:0; height:3px;
-  border-radius:18px 18px 0 0;
-}
-.sensor-card[data-device="device1"]::before { background:var(--blue); }
-.sensor-card[data-device="device2"]::before { background:#db2777; }
-.sensor-card[data-device="device3"]::before { background:#d97706; }
-.sensor-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); }
-.sensor-card:active { transform:scale(.97); }
-.sensor-card.sc-active {
-  border-color:var(--blue);
-  box-shadow:0 0 0 2px rgba(79,135,255,.25), var(--glow-card);
-}
-.sensor-card[data-device="device2"].sc-active { border-color:#db2777; box-shadow:0 0 0 2px rgba(219,39,119,.25), var(--glow-card); }
-.sensor-card[data-device="device3"].sc-active { border-color:#d97706; box-shadow:0 0 0 2px rgba(217,119,6,.25), var(--glow-card); }
-.sc-header { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
-.sc-live-dot {
-  width:7px; height:7px; border-radius:50%; flex-shrink:0;
-  animation:blink 2s infinite;
-}
-.sc-name { font-size:.72rem; font-weight:700; color:var(--text); flex:1; }
-.sc-badge {
-  font-size:.58rem; font-weight:700; padding:2px 7px;
-  border-radius:99px; background:var(--raised); color:var(--sub);
-  border:1px solid var(--border); white-space:nowrap;
-  transition:background .4s, color .4s, border-color .4s;
-}
-.sc-pm {
-  font-family:'DM Mono',monospace; font-size:1.75rem; font-weight:500;
-  line-height:1; color:var(--text); transition:color .4s;
-}
-.sc-pm-row { display:flex; align-items:baseline; gap:4px; margin-bottom:3px; }
-.sc-unit { font-size:.6rem; color:var(--sub); }
-.sc-time { font-size:.58rem; color:var(--sub); font-family:'DM Mono',monospace; margin-bottom:8px; }
-.sc-spark { height:38px; margin:0 -2px; }
-.sc-spark canvas { width:100%!important; height:38px!important; }
-
-/* ── Ambient body glow ── */
-body::after {
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-  background:radial-gradient(ellipse at 50% -5%, rgba(79,135,255,.055) 0%, transparent 65%);
-}
-.page, .bottom-nav { position:relative; z-index:1; }
+/* ── Sensor status cards ── */
+.sensor-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-bottom:10px; }
+.sensor-card { background:var(--white); border:1.5px solid var(--border); border-radius:18px; padding:11px 12px; cursor:pointer; transition:border-color .25s,box-shadow .25s,background .3s; position:relative; overflow:hidden; }
+.sensor-card.sc-active { border-color:var(--blue); box-shadow:0 0 0 3px rgba(79,135,255,.13); }
+.sc-header { display:flex; align-items:center; gap:5px; margin-bottom:6px; }
+.sc-live-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; animation:blink 2s infinite; }
+.sc-name { font-size:.6rem; font-weight:700; color:var(--sub); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sc-badge { font-size:.55rem; font-weight:700; padding:2px 6px; border-radius:99px; background:var(--raised); color:var(--sub); border:1px solid var(--border); white-space:nowrap; }
+.sc-pm-row { display:flex; align-items:baseline; gap:3px; margin-bottom:2px; }
+.sc-pm { font-family:'DM Mono',monospace; font-size:1.35rem; font-weight:600; color:var(--text); line-height:1; }
+.sc-unit { font-size:.56rem; color:var(--sub); }
+.sc-time { font-size:.55rem; color:var(--sub); margin-bottom:5px; }
+.sc-spark { height:32px; }
+.sc-spark canvas { width:100% !important; height:32px !important; }
 </style>
 </head>
 <body>
@@ -814,12 +375,12 @@ body::after {
       <div class="logo-icon">🌿</div>
       <div>
         <div class="logo-text">SmartAir</div>
-        <div class="logo-place">มทร. ธนบุรี · กรุงเทพฯ</div>
+        <div class="logo-place">มจธ. บางมด · กรุงเทพฯ</div>
       </div>
     </div>
     <div class="header-right">
       <div class="live-tag"><div class="dot"></div>ข้อมูลสด</div>
-      <button class="dm-btn" id="dm-toggle" title="สลับ Dark / Light">☀️</button>
+      <button class="dm-btn" id="dm-toggle" title="สลับ Dark / Light"><i class="ti ti-moon" id="dm-icon"></i></button>
     </div>
   </div>
 
@@ -828,67 +389,64 @@ body::after {
 
     <!-- Device selector -->
     <div class="device-tabs fade" style="animation-delay:.06s">
-      <button class="dev-tab active" data-device="device1">📡 S12 (Device 1)</button>
-      <button class="dev-tab" data-device="device2">📡 SCL (Device 2)</button>
-      <button class="dev-tab" data-device="device3">📡 S14 (Device 3)</button>
+      <button class="dev-tab active" data-device="device1"><i class="ti ti-antenna-bars-5"></i> S12 (Device 1)</button>
+      <button class="dev-tab" data-device="device2"><i class="ti ti-antenna-bars-5"></i> SCL (Device 2)</button>
+      <button class="dev-tab" data-device="device3"><i class="ti ti-antenna-bars-5"></i> S14 (Device 3)</button>
     </div>
 
-    <!-- ── Sensor Status Cards with Sparklines ── -->
-    <div class="sensor-cards fade" style="animation-delay:.07s">
-
+    <!-- Sensor status cards -->
+    <div class="sensor-cards fade" style="animation-delay:.05s">
       <div class="sensor-card sc-active" id="sc-device1" data-device="device1">
         <div class="sc-header">
           <div class="sc-live-dot" style="background:var(--blue)"></div>
-          <div class="sc-name">S12 · Device 1</div>
+          <div class="sc-name">S12 · D1</div>
           <div class="sc-badge" id="sc-badge-device1">--</div>
         </div>
         <div class="sc-pm-row">
-          <div class="sc-pm" id="sc-pm-device1">--</div>
+          <div class="sc-pm skel" id="sc-pm-device1" style="min-width:40px">--</div>
           <div class="sc-unit">µg/m³</div>
         </div>
         <div class="sc-time" id="sc-time-device1">--</div>
         <div class="sc-spark"><canvas id="spark-device1"></canvas></div>
       </div>
-
       <div class="sensor-card" id="sc-device2" data-device="device2">
         <div class="sc-header">
           <div class="sc-live-dot" style="background:#db2777"></div>
-          <div class="sc-name">SCL · Device 2</div>
+          <div class="sc-name">SCL · D2</div>
           <div class="sc-badge" id="sc-badge-device2">--</div>
         </div>
         <div class="sc-pm-row">
-          <div class="sc-pm" id="sc-pm-device2">--</div>
+          <div class="sc-pm skel" id="sc-pm-device2" style="min-width:40px">--</div>
           <div class="sc-unit">µg/m³</div>
         </div>
         <div class="sc-time" id="sc-time-device2">--</div>
         <div class="sc-spark"><canvas id="spark-device2"></canvas></div>
       </div>
-
       <div class="sensor-card" id="sc-device3" data-device="device3">
         <div class="sc-header">
           <div class="sc-live-dot" style="background:#d97706"></div>
-          <div class="sc-name">S14 · Device 3</div>
+          <div class="sc-name">S14 · D3</div>
           <div class="sc-badge" id="sc-badge-device3">--</div>
         </div>
         <div class="sc-pm-row">
-          <div class="sc-pm" id="sc-pm-device3">--</div>
+          <div class="sc-pm skel" id="sc-pm-device3" style="min-width:40px">--</div>
           <div class="sc-unit">µg/m³</div>
         </div>
         <div class="sc-time" id="sc-time-device3">--</div>
         <div class="sc-spark"><canvas id="spark-device3"></canvas></div>
       </div>
-
-    </div><!-- /.sensor-cards -->
+    </div>
 
     <div class="home-grid">
       <div class="home-col-left">
         <div class="hero fade" id="hero-card" style="animation-delay:.08s">
-          <div class="hero-tap"><i class="fas fa-chart-line"></i> แตะดูรายละเอียด</div>
+          <div class="hero-tap"><i class="ti ti-chart-line"></i> แตะดูรายละเอียด</div>
           <div id="face" style="display:none"></div>
-
-          <!-- ── SVG Arc Gauge ── -->
+          <div class="status-label" id="status-label">กำลังโหลด...</div>
+          <div class="status-desc" id="status-desc">รอรับข้อมูลจากเซนเซอร์</div>
+          <!-- Arc gauge -->
           <div class="gauge-container">
-            <svg class="arc-svg" viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <svg class="arc-svg" viewBox="0 0 220 130">
               <defs>
                 <linearGradient id="aqiGrad" x1="14" y1="0" x2="206" y2="0" gradientUnits="userSpaceOnUse">
                   <stop offset="0%"   stop-color="#22c55e"/>
@@ -897,95 +455,57 @@ body::after {
                   <stop offset="80%"  stop-color="#ef4444"/>
                   <stop offset="100%" stop-color="#9f1239"/>
                 </linearGradient>
-                <filter id="ndlGlow" x="-80%" y="-80%" width="260%" height="260%">
-                  <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                <filter id="ndlGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="3" result="blur"/>
                   <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
                 </filter>
               </defs>
-              <!-- Background track -->
-              <path class="arc-track" d="M 14 120 A 96 96 0 0 1 206 120"
-                    stroke-width="14" fill="none" stroke-linecap="round"/>
-              <!-- Dim gradient always visible -->
-              <path d="M 14 120 A 96 96 0 0 1 206 120"
-                    stroke="url(#aqiGrad)" stroke-width="14" fill="none"
-                    stroke-linecap="round" opacity="0.18"/>
-              <!-- Active animated fill -->
-              <path class="arc-fill" id="arc-fill"
-                    d="M 14 120 A 96 96 0 0 1 206 120"
-                    stroke="url(#aqiGrad)" stroke-width="14" fill="none"
-                    stroke-linecap="round"/>
-              <!-- Needle dot -->
-              <circle class="arc-needle" id="arc-needle"
-                      cx="14" cy="120" r="9" filter="url(#ndlGlow)"/>
+              <path class="arc-track" d="M 14 120 A 96 96 0 0 1 206 120" stroke-width="14" fill="none" stroke-linecap="round"/>
+              <path d="M 14 120 A 96 96 0 0 1 206 120" stroke="url(#aqiGrad)" stroke-width="14" fill="none" stroke-linecap="round" opacity="0.18"/>
+              <path class="arc-fill" id="arc-fill" d="M 14 120 A 96 96 0 0 1 206 120" stroke="url(#aqiGrad)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="302" stroke-dashoffset="302"/>
+              <circle class="arc-needle" id="arc-needle" cx="14" cy="120" r="9" filter="url(#ndlGlow)"/>
             </svg>
-            <!-- Number overlay in center of arc -->
             <div class="arc-num-overlay">
               <div class="pm-num" id="pm-num">--</div>
-              <div class="pm-meta">
-                <span class="pm-name">PM2.5</span>&nbsp;<span class="pm-unit">µg/m³</span>
-              </div>
-            </div>
-            <!-- Gauge scale labels -->
-            <div class="arc-gauge-label-row">
-              <span>0</span><span>75</span><span>150+</span>
+              <div class="pm-meta"><div class="pm-name">PM2.5</div><div class="pm-unit">µg/m³</div></div>
             </div>
           </div>
-
-          <div class="status-label" id="status-label">กำลังโหลด...</div>
-          <div class="status-desc" id="status-desc">รอรับข้อมูลจากเซ็นเซอร์</div>
-          <div class="updated">อัปเดตล่าสุด: <span id="last-time">--</span></div>
+          <div class="arc-gauge-label-row"><span>0</span><span>75</span><span>150+</span></div>
+          <div style="text-align:center"><span class="aqi-badge" id="hero-aqi-badge"><i class="ti ti-leaf"></i> กำลังโหลด...</span></div>
+          <div class="updated" style="margin-top:8px">อัปเดตล่าสุด: <span id="last-time">--</span></div>
         </div>
 
         <div class="stats-strip fade" id="stats-strip" style="animation-delay:.10s">
-          <div class="stat-item">
-            <span class="stat-icon-badge" style="color:#ef4444">↑</span>
-            <div class="stat-label">สูงสุด</div>
-            <div class="stat-val" id="stat-max">--</div>
-            <div class="stat-sub-unit">µg/m³</div>
-          </div>
-          <div class="stat-item">
-            <span class="stat-icon-badge" style="color:#4f87ff">≈</span>
-            <div class="stat-label">เฉลี่ย</div>
-            <div class="stat-val" id="stat-avg">--</div>
-            <div class="stat-sub-unit">µg/m³</div>
-          </div>
-          <div class="stat-item">
-            <span class="stat-icon-badge" style="color:#22c55e">↓</span>
-            <div class="stat-label">ต่ำสุด</div>
-            <div class="stat-val" id="stat-min">--</div>
-            <div class="stat-sub-unit">µg/m³</div>
-          </div>
-          <div class="stat-item">
-            <span class="stat-icon-badge" style="color:var(--sub)">Δ</span>
-            <div class="stat-label">เทียบก่อน</div>
-            <div class="stat-val" id="stat-delta">--</div>
-            <div class="stat-sub-unit"></div>
-          </div>
+          <div class="stat-item"><div class="stat-label">สูงสุด</div><div class="stat-val skel" id="stat-max" style="min-width:40px">--</div></div>
+          <div class="stat-item"><div class="stat-label">เฉลี่ย</div><div class="stat-val skel" id="stat-avg" style="min-width:40px">--</div></div>
+          <div class="stat-item"><div class="stat-label">ต่ำสุด</div><div class="stat-val skel" id="stat-min" style="min-width:40px">--</div></div>
+          <div class="stat-item"><div class="stat-label">เทียบก่อนหน้า</div><div class="stat-val skel" id="stat-delta" style="min-width:36px">--</div></div>
         </div>
 
-        <!-- AQI legend (compact) -->
-        <div class="gauge-wrap fade" style="animation-delay:.12s; padding:14px 18px;">
-          <div class="gauge-title" style="margin-bottom:10px">📊 มาตรฐาน AQI (PCD)</div>
-          <div class="legend" style="gap:6px">
-            <div class="leg-item"><div class="leg-dot" style="background:#22c55e"></div>ดีมาก (0–25)</div>
-            <div class="leg-item"><div class="leg-dot" style="background:#65a30d"></div>ดี (26–37)</div>
-            <div class="leg-item"><div class="leg-dot" style="background:#d97706"></div>ปานกลาง (38–50)</div>
-            <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div>ไม่ดี (51–90)</div>
-            <div class="leg-item"><div class="leg-dot" style="background:#9f1239"></div>อันตราย (&gt;90)</div>
+        <div class="gauge-wrap fade" style="animation-delay:.12s">
+          <div class="gauge-title"><i class="ti ti-chart-bar"></i> ระดับ PM2.5 อยู่ที่ไหน?</div>
+          <div class="gauge-bar-bg"><div class="gauge-pointer" id="gauge-ptr"><i class="ti ti-map-pin" style="font-size:.6rem"></i></div></div>
+          <div class="gauge-labels"><span>0 ดีมาก</span><span>25</span><span>50</span><span>100</span><span>&gt;150 อันตราย</span></div>
+          <div class="legend">
+            <div class="leg-item"><div class="leg-dot" style="background:#16a34a"></div>ดี (0–25)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#65a30d"></div>ปานกลาง (26–37)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#d97706"></div>เริ่มมีผล (38–50)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#dc2626"></div>ไม่ดี (51–90)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#7c2d12"></div>อันตราย (&gt;90)</div>
           </div>
         </div>
       </div>
 
       <div class="home-col-right">
         <div class="advice-card fade" id="advice-card" style="animation-delay:.16s">
-          <div class="advice-header"><div class="advice-icon">💡</div><div class="advice-title" id="advice-title">คำแนะนำ</div></div>
+          <div class="advice-header"><div class="advice-icon"><i class="ti ti-bulb"></i></div><div class="advice-title" id="advice-title">คำแนะนำ</div></div>
           <ul class="advice-list" id="advice-list"><li>กำลังประมวลผล...</li></ul>
         </div>
 
         <!-- AI Prediction card -->
         <div class="predict-card fade" id="predict-card" style="animation-delay:.18s">
           <div class="predict-header">
-            <div class="predict-icon">🤖</div>
+            <div class="predict-icon"><i class="ti ti-cpu"></i></div>
             <div class="predict-title">AI ทำนาย (อีก 10 นาที)</div>
             <div class="predict-badge" id="pred-aqi-badge">--</div>
           </div>
@@ -999,18 +519,18 @@ body::after {
 
   <!-- ── Tab: สถิติ ── -->
   <section class="tab-section" id="tab-stats">
-    <div class="section-head">📈 ประวัติ &amp; สถิติ</div>
+    <div class="section-head"><i class="ti ti-chart-line"></i> ประวัติ & สถิติ</div>
 
     <div class="chart-card fade" style="margin-bottom:10px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
-        <div class="chart-title" style="margin:0">📉 แนวโน้ม PM2.5 (20 จุดล่าสุด)</div>
-        <button class="export-btn" id="btn-export-csv"><i class="fas fa-download"></i> CSV</button>
+        <div class="chart-title" style="margin:0"><i class="ti ti-trending-up"></i> แนวโน้ม PM2.5 (20 จุดล่าสุด)</div>
+        <button class="export-btn" id="btn-export-csv"><i class="ti ti-download"></i> CSV</button>
       </div>
       <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
     </div>
 
     <div class="chart-card fade" style="margin-bottom:10px">
-      <div class="chart-title">🤖 ประวัติการทำนาย AI — PM2.5 (20 ครั้งล่าสุด)</div>
+      <div class="chart-title"><i class="ti ti-cpu"></i> ประวัติการทำนาย AI — PM2.5 (20 ครั้งล่าสุด)</div>
       <div style="height:120px;position:relative">
         <canvas id="predict-hist-chart"></canvas>
         <div id="pred-hist-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--sub)">รอข้อมูลจาก AI...</div>
@@ -1018,13 +538,13 @@ body::after {
     </div>
 
     <button class="more-btn fade" id="btn-allfields">
-      <i class="fas fa-microchip"></i> ดูค่าทั้งหมดจากเซ็นเซอร์ (ทุก device)
+      <i class="ti ti-microchip"></i> ดูค่าทั้งหมดจากเซนเซอร์ (ทุก device)
     </button>
 
     <!-- 3D Digital Twin -->
     <div class="twin-card fade">
       <div class="twin-header">
-        <div class="chart-title" style="margin:0">🗺️ จุดติดตั้งเซ็นเซอร์ (Digital Twin)</div>
+        <div class="chart-title" style="margin:0"><i class="ti ti-map-2"></i> จุดติดตั้งเซนเซอร์ (Digital Twin)</div>
       </div>
       <div class="twin-viewer">
         <model-viewer id="kmutt-model"
@@ -1068,31 +588,31 @@ body::after {
         </model-viewer>
       </div>
       <div class="twin-btns">
-        <button class="twin-btn" id="btn-cam-reset">🔄 มุมมองเริ่มต้น</button>
-        <button class="twin-btn ene"  id="btn-cam-ene">📡 S12</button>
-        <button class="twin-btn dev2" id="btn-cam-dev2">📡 SCL</button>
-        <button class="twin-btn dev3" id="btn-cam-dev3">📡 S14</button>
+        <button class="twin-btn" id="btn-cam-reset"><i class="ti ti-home"></i> มุมมองเริ่มต้น</button>
+        <button class="twin-btn ene"  id="btn-cam-ene"><i class="ti ti-antenna-bars-5"></i> S12</button>
+        <button class="twin-btn dev2" id="btn-cam-dev2"><i class="ti ti-antenna-bars-5"></i> SCL</button>
+        <button class="twin-btn dev3" id="btn-cam-dev3"><i class="ti ti-antenna-bars-5"></i> S14</button>
       </div>
     </div>
   </section>
 
   <!-- ── Tab: อากาศ ── -->
   <section class="tab-section" id="tab-weather">
-    <div class="section-head">🌤 สภาพอากาศ</div>
+    <div class="section-head"><i class="ti ti-cloud-sun"></i> สภาพอากาศ</div>
     <div class="tiles" style="margin-bottom:10px">
-      <div class="tile" id="tile-weather"><div class="tile-emoji">🌡️</div><div class="tile-val" id="w-temp">--</div><div class="tile-label">อุณหภูมิ (°C)</div><div class="tile-tap">แตะดู ›</div></div>
-      <div class="tile" id="tile-hum"><div class="tile-emoji">💧</div><div class="tile-val" id="w-hum">--</div><div class="tile-label">ความชื้น (%)</div><div class="tile-tap">แตะดู ›</div></div>
-      <div class="tile" id="tile-wind"><div class="tile-emoji">🌬</div><div class="tile-val" id="w-wind">--</div><div class="tile-label">ลม (m/s)</div><div class="tile-tap">แตะดู ›</div></div>
+      <div class="tile" id="tile-weather"><div class="tile-emoji"><i class="ti ti-thermometer" style="color:#f45b7a"></i></div><div class="tile-val" id="w-temp">--</div><div class="tile-label">อุณหภูมิ (°C)</div><div class="tile-tap">แตะดู ›</div></div>
+      <div class="tile" id="tile-hum"><div class="tile-emoji"><i class="ti ti-droplet" style="color:#8b5cf6"></i></div><div class="tile-val" id="w-hum">--</div><div class="tile-label">ความชื้น (%)</div><div class="tile-tap">แตะดู ›</div></div>
+      <div class="tile" id="tile-wind"><div class="tile-emoji"><i class="ti ti-wind" style="color:#4f87ff"></i></div><div class="tile-val" id="w-wind">--</div><div class="tile-label">ลม (m/s)</div><div class="tile-tap">แตะดู ›</div></div>
     </div>
     <div class="chart-card" style="margin-bottom:10px">
-      <div class="chart-title">📊 อุณหภูมิ &amp; ความชื้น (ประวัติ)</div>
+      <div class="chart-title"><i class="ti ti-trending-up"></i> อุณหภูมิ & ความชื้น (ประวัติ)</div>
       <div style="height:160px"><canvas id="weather-inline-chart"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-title">📋 ตารางประวัติอากาศ</div>
+      <div class="chart-title">🗂 ตารางประวัติอากาศ</div>
       <div class="mtable-wrap" style="max-height:280px;overflow-y:auto">
         <table class="mtable">
-          <thead><tr><th>เวลา</th><th>🌡°C</th><th>💧%</th><th>💨m/s</th><th>☁️%</th><th>สภาพ</th></tr></thead>
+          <thead><tr><th>เวลา</th><th><i class="ti ti-thermometer"></i>°C</th><th><i class="ti ti-droplet"></i>%</th><th><i class="ti ti-wind"></i>m/s</th><th><i class="ti ti-cloud"></i>%</th><th>สภาพ</th></tr></thead>
           <tbody id="w-inline-tbody"><tr><td colspan="6" style="text-align:center;padding:18px;color:var(--sub)">รอข้อมูล...</td></tr></tbody>
         </table>
       </div>
@@ -1101,10 +621,10 @@ body::after {
 
   <!-- ── Tab: ตั้งค่า ── -->
   <section class="tab-section" id="tab-settings">
-    <div class="section-head">⚙️ ตั้งค่า</div>
+    <div class="section-head"><i class="ti ti-settings-2"></i> ตั้งค่า</div>
     <div class="settings-section">
       <div class="settings-card">
-        <div class="settings-title">🔔 การแจ้งเตือน</div>
+        <div class="settings-title"><i class="ti ti-bell-ringing"></i> การแจ้งเตือน</div>
         <div class="setting-row">
           <div class="setting-info"><div class="setting-name">เปิดการแจ้งเตือน</div><div class="setting-desc">แจ้งเตือนเมื่อ PM2.5 เกินค่าที่กำหนด</div></div>
           <label class="toggle"><input type="checkbox" id="alert-enabled" checked><span class="slider"></span></label>
@@ -1121,7 +641,7 @@ body::after {
     </div>
     <div class="settings-section">
       <div class="settings-card">
-        <div class="settings-title">🎨 การแสดงผล</div>
+        <div class="settings-title"><i class="ti ti-palette"></i> การแสดงผล</div>
         <div class="setting-row">
           <div class="setting-info"><div class="setting-name">Dark Mode</div><div class="setting-desc">เปลี่ยนธีมเป็นโหมดมืด</div></div>
           <label class="toggle"><input type="checkbox" id="dm-toggle-settings"><span class="slider"></span></label>
@@ -1130,9 +650,9 @@ body::after {
     </div>
     <div class="settings-section">
       <div class="settings-card">
-        <div class="settings-title">ℹ️ ข้อมูลระบบ</div>
+        <div class="settings-title"><i class="ti ti-info-circle"></i> ข้อมูลระบบ</div>
         <div class="setting-row" style="padding:8px 0">
-          <div class="setting-info"><div class="setting-name">แหล่งข้อมูลดิบ</div><div class="setting-desc">Firebase Realtime DB · sensor/device1,2,3/history</div></div>
+          <div class="setting-info"><div class="setting-name">แหล่งข้อมูลฝุ่น</div><div class="setting-desc">Firebase Realtime DB · sensor/device1,2,3/history</div></div>
         </div>
         <div class="setting-row" style="padding:8px 0">
           <div class="setting-info"><div class="setting-name">แหล่งข้อมูล AI</div><div class="setting-desc">Firebase · /ai_analysis/prediction</div></div>
@@ -1150,10 +670,10 @@ body::after {
 </div><!-- .page -->
 
 <nav class="bottom-nav">
-  <button class="nav-item active" data-tab="home"><div class="nav-emoji">🏠</div><div class="nav-label">หน้าหลัก</div><div class="nav-pip"></div></button>
-  <button class="nav-item" data-tab="stats"><div class="nav-emoji">📈</div><div class="nav-label">สถิติ</div><div class="nav-pip"></div></button>
-  <button class="nav-item" data-tab="weather"><div class="nav-emoji">🌤</div><div class="nav-label">อากาศ</div><div class="nav-pip"></div></button>
-  <button class="nav-item" data-tab="settings"><div class="nav-emoji">⚙️</div><div class="nav-label">ตั้งค่า</div><div class="nav-pip"></div></button>
+  <button class="nav-item active" data-tab="home"><div class="nav-emoji"><i class="ti ti-home-2"></i></div><div class="nav-label">หน้าหลัก</div><div class="nav-pip"></div></button>
+  <button class="nav-item" data-tab="stats"><div class="nav-emoji"><i class="ti ti-chart-bar"></i></div><div class="nav-label">สถิติ</div><div class="nav-pip"></div></button>
+  <button class="nav-item" data-tab="weather"><div class="nav-emoji"><i class="ti ti-cloud-sun"></i></div><div class="nav-label">อากาศ</div><div class="nav-pip"></div></button>
+  <button class="nav-item" data-tab="settings"><div class="nav-emoji"><i class="ti ti-settings-2"></i></div><div class="nav-label">ตั้งค่า</div><div class="nav-pip"></div></button>
 </nav>
 
 <!-- ── Modals ── -->
@@ -1161,12 +681,12 @@ body::after {
   <div class="modal">
     <div class="modal-drag"></div>
     <div class="modal-head">
-      <div><div class="modal-title">💨 รายละเอียด PM2.5</div><div class="modal-sub" id="modal-pm-sub">ประวัติ 50 จุดล่าสุด · Firebase Realtime</div></div>
-      <div class="modal-close" onclick="closeModal('modal-pm')"><i class="fas fa-times"></i></div>
+      <div><div class="modal-title"><i class="ti ti-wind"></i> รายละเอียด PM2.5</div><div class="modal-sub" id="modal-pm-sub">ประวัติ 50 จุดล่าสุด · Firebase Realtime</div></div>
+      <div class="modal-close" onclick="closeModal('modal-pm')"><i class="ti ti-x"></i></div>
     </div>
     <div class="modal-body">
-      <div class="msec"><div class="msec-title">📉 แนวโน้ม PM2.5</div><div class="mchart-wrap"><canvas id="m-pm-chart"></canvas></div></div>
-      <div class="msec"><div class="msec-title">📋 ตารางข้อมูลดิบ</div><div class="mtable-wrap"><table class="mtable"><thead><tr id="pm-thead"></tr></thead><tbody id="pm-tbody"></tbody></table></div></div>
+      <div class="msec"><div class="msec-title"><i class="ti ti-chart-line"></i> แนวโน้ม PM2.5</div><div class="mchart-wrap"><canvas id="m-pm-chart"></canvas></div></div>
+      <div class="msec"><div class="msec-title"><i class="ti ti-table"></i> ตารางข้อมูลดิบ</div><div class="mtable-wrap"><table class="mtable"><thead><tr id="pm-thead"></tr></thead><tbody id="pm-tbody"></tbody></table></div></div>
     </div>
   </div>
 </div>
@@ -1175,12 +695,12 @@ body::after {
   <div class="modal">
     <div class="modal-drag"></div>
     <div class="modal-head">
-      <div><div class="modal-title">📡 ค่าทั้งหมดจากเซ็นเซอร์</div><div class="modal-sub">ข้อมูลล่าสุด · ประวัติแยกตามอุปกรณ์</div></div>
-      <div class="modal-close" onclick="closeModal('modal-fields')"><i class="fas fa-times"></i></div>
+      <div><div class="modal-title"><i class="ti ti-antenna-bars-5"></i> ค่าทั้งหมดจากเซนเซอร์</div><div class="modal-sub">ข้อมูลล่าสุด · ประวัติแยกตามอุปกรณ์</div></div>
+      <div class="modal-close" onclick="closeModal('modal-fields')"><i class="ti ti-x"></i></div>
     </div>
     <div class="modal-body">
-      <div class="msec"><div class="msec-title">📊 ค่าล่าสุดทุก field</div><div class="mfield-grid" id="mf-grid"><div class="loading"><span>📡</span><span>📊</span><span>✨</span></div></div></div>
-      <div class="msec"><div class="msec-title">🔬 ประวัติแยกตามอุปกรณ์</div><div id="dev-wrap"><div class="loading"><span>🔱</span><span>📈</span><span>🌫</span></div></div></div>
+      <div class="msec"><div class="msec-title"><i class="ti ti-chart-dots"></i> ค่าล่าสุดทุก field</div><div class="mfield-grid" id="mf-grid"><div class="loading"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div></div></div>
+      <div class="msec"><div class="msec-title"><i class="ti ti-history"></i> ประวัติแยกตามอุปกรณ์</div><div id="dev-wrap"><div class="loading"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div></div></div>
     </div>
   </div>
 </div>
@@ -1189,13 +709,13 @@ body::after {
   <div class="modal">
     <div class="modal-drag"></div>
     <div class="modal-head">
-      <div><div class="modal-title">🌤 สภาพอากาศ</div><div class="modal-sub">มทร. ธนบุรี · OpenWeatherMap</div></div>
-      <div class="modal-close" onclick="closeModal('modal-weather')"><i class="fas fa-times"></i></div>
+      <div><div class="modal-title"><i class="ti ti-cloud-sun"></i> สภาพอากาศ</div><div class="modal-sub">มจธ. บางมด · OpenWeatherMap</div></div>
+      <div class="modal-close" onclick="closeModal('modal-weather')"><i class="ti ti-x"></i></div>
     </div>
     <div class="modal-body">
-      <div class="msec"><div class="msec-title">🌡 ข้อมูลล่าสุด</div><div class="wdetail-grid" id="w-detail-grid"></div></div>
-      <div class="msec"><div class="msec-title">📊 อุณหภูมิ &amp; ความชื้น</div><div class="mchart-wrap"><canvas id="m-weather-chart"></canvas></div></div>
-      <div class="msec"><div class="msec-title">📋 ตารางประวัติ</div><div class="mtable-wrap"><table class="mtable"><thead><tr><th>เวลา</th><th>🌡°C</th><th>💧%</th><th>💨m/s</th><th>🧊mm</th><th>☁️%</th><th>สภาพ</th></tr></thead><tbody id="w-hist-tbody"></tbody></table></div></div>
+      <div class="msec"><div class="msec-title"><i class="ti ti-thermometer"></i> ข้อมูลล่าสุด</div><div class="wdetail-grid" id="w-detail-grid"></div></div>
+      <div class="msec"><div class="msec-title"><i class="ti ti-trending-up"></i> อุณหภูมิ & ความชื้น</div><div class="mchart-wrap"><canvas id="m-weather-chart"></canvas></div></div>
+      <div class="msec"><div class="msec-title"><i class="ti ti-table"></i> ตารางประวัติ</div><div class="mtable-wrap"><table class="mtable"><thead><tr><th>เวลา</th><th><i class="ti ti-thermometer"></i>°C</th><th><i class="ti ti-droplet"></i>%</th><th><i class="ti ti-wind"></i>m/s</th><th><i class="ti ti-cloud-rain"></i>mm</th><th><i class="ti ti-cloud"></i>%</th><th>สภาพ</th></tr></thead><tbody id="w-hist-tbody"></tbody></table></div></div>
     </div>
   </div>
 </div>
@@ -1228,47 +748,47 @@ const DEVICE_INFO = {
 
 /* ── Sensor meta ── */
 const META = {
-  pm2_5:{name:'PM2.5',unit:'µg/m³',icon:'💨',color:'#4f87ff'},
-  pm10:{name:'PM10',unit:'µg/m³',icon:'🫧',color:'#0dbcb9'},
-  pm1:{name:'PM1.0',unit:'µg/m³',icon:'🫧',color:'#67e8f9'},
-  co2:{name:'CO₂',unit:'ppm',icon:'☁️',color:'#22c55e'},
-  co:{name:'CO',unit:'ppm',icon:'⚠️',color:'#f59e0b'},
-  temperature:{name:'อุณหภูมิ',unit:'°C',icon:'🌡️',color:'#f45b7a'},
-  temp:{name:'อุณหภูมิ',unit:'°C',icon:'🌡️',color:'#f45b7a'},
-  humidity:{name:'ความชื้น',unit:'%RH',icon:'💧',color:'#8b5cf6'},
-  pressure:{name:'ความดัน',unit:'hPa',icon:'📵',color:'#f59e0b'},
-  voc:{name:'VOC',unit:'ppb',icon:'❗️',color:'#ec4899'},
-  no2:{name:'NO₂',unit:'ppb',icon:'🏭',color:'#fb923c'},
-  o3:{name:'โอโซน',unit:'ppb',icon:'🀄',color:'#84cc16'},
-  aqi:{name:'AQI',unit:'',icon:'📊',color:'#8b5cf6'},
-  lux:{name:'แสง',unit:'lux',icon:'💡',color:'#f59e0b'},
-  noise:{name:'เสียง',unit:'dB',icon:'📢',color:'#ec4899'},
+  pm2_5:{name:'PM2.5',unit:'µg/m³',icon:'<i class="ti ti-wind"></i>',color:'#4f87ff'},
+  pm10:{name:'PM10',unit:'µg/m³',icon:'<i class="ti ti-cloud"></i>',color:'#0dbcb9'},
+  pm1:{name:'PM1.0',unit:'µg/m³',icon:'<i class="ti ti-atom-2"></i>',color:'#67e8f9'},
+  co2:{name:'CO₂',unit:'ppm',icon:'<i class="ti ti-cloud-fog"></i>',color:'#22c55e'},
+  co:{name:'CO',unit:'ppm',icon:'<i class="ti ti-alert-circle"></i>',color:'#f59e0b'},
+  temperature:{name:'อุณหภูมิ',unit:'°C',icon:'<i class="ti ti-thermometer"></i>',color:'#f45b7a'},
+  temp:{name:'อุณหภูมิ',unit:'°C',icon:'<i class="ti ti-thermometer"></i>',color:'#f45b7a'},
+  humidity:{name:'ความชื้น',unit:'%RH',icon:'<i class="ti ti-droplet"></i>',color:'#8b5cf6'},
+  pressure:{name:'ความดัน',unit:'hPa',icon:'<i class="ti ti-gauge"></i>',color:'#f59e0b'},
+  voc:{name:'VOC',unit:'ppb',icon:'<i class="ti ti-virus"></i>',color:'#ec4899'},
+  no2:{name:'NO₂',unit:'ppb',icon:'<i class="ti ti-building-factory-2"></i>',color:'#fb923c'},
+  o3:{name:'โอโซน',unit:'ppb',icon:'<i class="ti ti-globe"></i>',color:'#84cc16'},
+  aqi:{name:'AQI',unit:'',icon:'<i class="ti ti-chart-pie"></i>',color:'#8b5cf6'},
+  lux:{name:'แสง',unit:'lux',icon:'<i class="ti ti-sun"></i>',color:'#f59e0b'},
+  noise:{name:'เสียง',unit:'dB',icon:'<i class="ti ti-volume"></i>',color:'#ec4899'},
 };
 const SKIP = new Set(['datetime','timestamp','date','time','id','key','device','device_id','deviceid']);
 function metaFor(k){
   const kl = k.toLowerCase();
   return META[kl]
     || (Object.keys(META).find(mk => kl.includes(mk)) ? META[Object.keys(META).find(mk => kl.includes(mk))] : null)
-    || {name:k, unit:'', icon:'📡', color:'#94a3b8'};
+    || {name:k, unit:'', icon:'<i class="ti ti-antenna-bars-5"></i>', color:'#94a3b8'};
 }
 
 /* ── Level config (มาตรฐาน PCD) ── */
 const LEVELS = [
   {max:25,  face:'😊', label:'อากาศดีมาก',      desc:'อากาศสะอาด เหมาะสำหรับกิจกรรมกลางแจ้งทุกประเภท',
-   color:'#22c55e', bg:'var(--good-bg)', ring:'var(--good-ring)',
-   advice:['ออกกำลังกายกลางแจ้งได้ตามต้องการ','เปิดหน้าต่างรับอากาศบริสุทธิ์ได้เลย','ไม่จำเป็นต้องสวมหน้ากาก']},
+   color:'#16a34a', bg:'var(--good-bg)', ring:'var(--good-ring)',
+   advice:['ออกกำลังกายกลางแจ้งได้ตามปกติ','เปิดหน้าต่างรับอากาศบริสุทธิ์ได้เลย','ไม่จำเป็นต้องใส่หน้ากาก']},
   {max:37,  face:'🙂', label:'อากาศดี',          desc:'คุณภาพอากาศอยู่ในเกณฑ์ดี เหมาะกับกิจกรรมทั่วไป',
    color:'#65a30d', bg:'#ecfccb', ring:'#bef264',
-   advice:['กิจกรรมกลางแจ้งทำได้ตามต้องการ','ผู้ที่แพ้อากาศระวังเล็กน้อย','เปิดหน้าต่างได้ตามสะดวก']},
+   advice:['กิจกรรมกลางแจ้งทำได้ตามปกติ','ผู้ที่แพ้ฝุ่นอาจระวังเล็กน้อย','เปิดหน้าต่างได้ตามสะดวก']},
   {max:50,  face:'😐', label:'เริ่มมีผลกระทบ',  desc:'เกินมาตรฐาน PCD (37.5 µg/m³) — กลุ่มเสี่ยงควรระวัง',
    color:'#d97706', bg:'var(--mod-bg)', ring:'var(--mod-ring)',
-   advice:['กลุ่มเสี่ยงควรลดกิจกรรมกลางแจ้ง','หากรู้สึกระคายเคืองควรสวมหน้ากาก N95','ปิดหน้าต่างหากอยู่ในห้องแอร์']},
+   advice:['กลุ่มเสี่ยงควรลดกิจกรรมกลางแจ้ง','หากรู้สึกระคายเคืองควรใส่หน้ากาก N95','ปิดหน้าต่างหากอยู่ในห้องแอร์']},
   {max:90,  face:'😷', label:'ไม่ดีต่อสุขภาพ',  desc:'ทุกคนอาจได้รับผลกระทบ ควรระมัดระวังเป็นพิเศษ',
-   color:'#ef4444', bg:'var(--bad-bg)', ring:'var(--bad-ring)',
-   advice:['ควรอยู่ภายในอาคารให้มากที่สุด','สวมหน้ากาก N95 ทุกครั้งที่ออกนอกอาคาร','หลีกเลี่ยงการออกกำลังกายกลางแจ้ง','ปิดหน้าต่างและประตูให้สนิท']},
+   color:'#dc2626', bg:'var(--bad-bg)', ring:'var(--bad-ring)',
+   advice:['ควรอยู่ภายในอาคารให้มากที่สุด','ใส่หน้ากาก N95 ทุกครั้งที่ออกข้างนอก','หลีกเลี่ยงการออกกำลังกายกลางแจ้ง','ปิดหน้าต่างและประตูให้สนิท']},
   {max:999, face:'🚨', label:'อันตราย',           desc:'ระดับอันตราย ควรหลีกเลี่ยงการออกนอกอาคารโดยไม่จำเป็น',
    color:'#7c2d12', bg:'#fef2f2', ring:'#fca5a5',
-   advice:['อย่าออกนอกอาคารโดยไม่จำเป็น','สวมหน้ากาก N95 ตลอดเวลาหากต้องออก','ผู้ป่วยโรคหัวใจและโรคระบบทางเดินหายใจควรพบแพทย์']},
+   advice:['อย่าออกนอกอาคารโดยไม่จำเป็น','ใส่หน้ากาก N95 ตลอดเวลาหากต้องออก','ผู้ป่วยโรคหัวใจและปอดควรปรึกษาแพทย์']},
 ];
 const getLevel = v => LEVELS.find(l => v <= l.max) || LEVELS[LEVELS.length - 1];
 function setColors(lv){
@@ -1282,23 +802,14 @@ function setColors(lv){
 function isDark(){ return document.documentElement.getAttribute('data-theme') === 'dark'; }
 function setDark(on){
   document.documentElement.setAttribute('data-theme', on ? 'dark' : 'light');
-  document.getElementById('dm-toggle').textContent = on ? '☀️' : '🌙';
+  const dmI = document.getElementById('dm-icon'); if(dmI) dmI.className = on ? 'ti ti-sun' : 'ti ti-moon';
   document.getElementById('dm-toggle-settings').checked = on;
   localStorage.setItem('smartair-dark', on ? '1' : '0');
   updateChartsTheme();
 }
 document.getElementById('dm-toggle').addEventListener('click', () => setDark(!isDark()));
 document.getElementById('dm-toggle-settings').addEventListener('change', e => setDark(e.target.checked));
-// Default dark — restore light only if user explicitly saved '0'
-const _sd = localStorage.getItem('smartair-dark');
-if(_sd === '0'){
-  document.documentElement.setAttribute('data-theme','light');
-  document.getElementById('dm-toggle').textContent = '🌙';
-  document.getElementById('dm-toggle-settings').checked = false;
-} else {
-  document.getElementById('dm-toggle').textContent = '☀️';
-  document.getElementById('dm-toggle-settings').checked = true;
-}
+if(localStorage.getItem('smartair-dark') === '1') setDark(true);
 
 /* ── Nav tabs ── */
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1352,51 +863,59 @@ function markDataReceived(){
     _dataReceived = true;
     clearTimeout(_errorTimer);
     document.getElementById('error-banner').classList.remove('show');
+    ['stat-max','stat-avg','stat-min','stat-delta'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.classList.remove('skel');
+    });
   }
 }
 
-/* ── Arc gauge helpers ── */
-const ARC_L = 302, ARC_R = 96, ARC_CX = 110, ARC_CY = 120;
-
-function updateArcGauge(pm) {
-  const p = Math.min(pm / 150, 1);
+/* ── Arc gauge ── */
+const ARC_L=302, ARC_R=96, ARC_CX=110, ARC_CY=120;
+function updateArcGauge(pm){
+  const p = Math.min(pm/150,1);
   const fill = document.getElementById('arc-fill');
-  if (fill) fill.style.strokeDashoffset = (ARC_L * (1 - p)).toFixed(1);
-  const angle = Math.PI * (1 - p);
-  const nx = (ARC_CX + ARC_R * Math.cos(angle)).toFixed(1);
-  const ny = (ARC_CY - ARC_R * Math.sin(angle)).toFixed(1);
+  if(fill) fill.style.strokeDashoffset = (ARC_L*(1-p)).toFixed(1);
+  const angle = Math.PI*(1-p);
+  const nx = (ARC_CX + ARC_R*Math.cos(angle)).toFixed(1);
+  const ny = (ARC_CY - ARC_R*Math.sin(angle)).toFixed(1);
   const needle = document.getElementById('arc-needle');
-  if (needle) { needle.setAttribute('cx', nx); needle.setAttribute('cy', ny); }
+  if(needle){ needle.setAttribute('cx',nx); needle.setAttribute('cy',ny); }
+}
+function animateNumber(el, from, to, duration){
+  if(!el) return;
+  const start = performance.now();
+  function tick(now){
+    const t = Math.min((now-start)/duration,1);
+    const ease = 1-(1-t)*(1-t)*(1-t);
+    el.textContent = (from+(to-from)*ease).toFixed(1);
+    if(t<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
-function animateNumber(el, from, to, duration) {
-  duration = duration || 650;
-  const startTime = performance.now();
-  const run = (now) => {
-    const t = Math.min((now - startTime) / duration, 1);
-    const ease = 1 - Math.pow(1 - t, 3);
-    el.textContent = (from + (to - from) * ease).toFixed(1);
-    if (t < 1) requestAnimationFrame(run);
-    else {
-      el.textContent = to.toFixed(1);
-      el.classList.remove('num-pop');
-      void el.offsetWidth;
-      el.classList.add('num-pop');
-    }
-  };
-  requestAnimationFrame(run);
-}
-
-/* ── Ripple effect ── */
-function addRipple(e) {
-  const el = e.currentTarget;
-  const rect = el.getBoundingClientRect();
-  const size = Math.max(rect.width, rect.height) * 1.8;
-  const rip = document.createElement('span');
-  rip.className = 'ripple';
-  rip.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size/2}px;top:${e.clientY - rect.top - size/2}px`;
-  el.appendChild(rip);
-  rip.addEventListener('animationend', () => rip.remove());
+/* ── Sensor status cards ── */
+const _scSparkCharts = {};
+function updateSensorCard(device, records){
+  const latest = records[records.length-1];
+  if(!latest) return;
+  const pm = parseFloat(latest.pm2_5)||0;
+  const lv = getLevel(pm);
+  const pmEl = document.getElementById('sc-pm-'+device);
+  if(pmEl){ pmEl.textContent = pm.toFixed(1); pmEl.classList.remove('skel'); }
+  const badge = document.getElementById('sc-badge-'+device);
+  if(badge){ badge.textContent = lv.label; badge.style.background = lv.color+'22'; badge.style.color = lv.color; badge.style.borderColor = lv.color+'55'; }
+  const timeEl = document.getElementById('sc-time-'+device);
+  if(timeEl) timeEl.textContent = latest.datetime || '--';
+  /* sparkline */
+  const canv = document.getElementById('spark-'+device);
+  if(!canv) return;
+  const pts = records.slice(-12).map(r=>parseFloat(r.pm2_5)||0);
+  if(_scSparkCharts[device]){ _scSparkCharts[device].destroy(); }
+  _scSparkCharts[device] = new Chart(canv, {
+    type:'line',
+    data:{ labels:pts.map((_,i)=>i), datasets:[{ data:pts, borderColor: lv.color||'#4f87ff', borderWidth:1.5, pointRadius:0, tension:.4, fill:true, backgroundColor: (lv.color||'#4f87ff')+'22' }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}} }
+  });
 }
 
 /* ── Hero update ── */
@@ -1405,22 +924,15 @@ function updateHero(pm, ts, allPm){
   setColors(lv);
   document.getElementById('status-label').textContent = lv.label;
   document.getElementById('status-desc').textContent = lv.desc;
-  document.getElementById('last-time').textContent = ts || '--';
-
-  // Animate number in arc gauge
-  const numEl = document.getElementById('pm-num');
-  const prevVal = parseFloat(numEl.getAttribute('data-pm') || '0') || 0;
-  numEl.setAttribute('data-pm', pm);
-  if (prevVal === 0) {
-    numEl.textContent = pm.toFixed(1);
-  } else {
-    animateNumber(numEl, prevVal, pm);
-  }
-
-  // Update arc gauge needle + fill
+  animateNumber(document.getElementById('pm-num'), parseFloat(document.getElementById('pm-num').textContent)||0, pm, 900);
   updateArcGauge(pm);
-
-  document.getElementById('advice-title').textContent = '💡 คำแนะนำ';
+  document.getElementById('last-time').textContent = ts || '--';
+  const pct = Math.min(Math.max(pm / 150, 0), 1) * 100;
+  const ptr = document.getElementById('gauge-ptr');
+  if(ptr){ ptr.style.left = pct + '%'; ptr.style.borderColor = lv.color; }
+  const aqiBadge = document.getElementById('hero-aqi-badge');
+  if(aqiBadge) aqiBadge.innerHTML = `<i class="ti ti-leaf"></i> ${lv.label}`;
+  document.getElementById('advice-title').textContent = 'คำแนะนำ';
   document.getElementById('advice-list').innerHTML = lv.advice.map(a => `<li>${a}</li>`).join('');
   if(allPm.length > 0){
     const maxV = Math.max(...allPm), minV = Math.min(...allPm), avgV = allPm.reduce((a,b) => a+b, 0) / allPm.length;
@@ -1498,48 +1010,7 @@ function updateChartsTheme(){
 const _devAll = { device1:[], device2:[], device3:[] };
 let _activeDevice = 'device1';
 let _mPmChart = null, _mWeatherChart = null, _weatherInlineChart = null;
-const _sparkCharts = {}, _devCharts = {}, _scSparkCharts = {};
-
-/* ── Sensor card updater ── */
-function updateSensorCard(device, records) {
-  if (!records.length) return;
-  const latest = records[records.length - 1];
-  const pm = parseFloat(latest?.pm2_5) || 0;
-  const lv = getLevel(pm);
-  const info = DEVICE_INFO[device];
-
-  const pmEl = document.getElementById('sc-pm-' + device);
-  if (pmEl) { pmEl.textContent = pm.toFixed(1); pmEl.style.color = lv.color; }
-
-  const badge = document.getElementById('sc-badge-' + device);
-  if (badge) {
-    badge.textContent = lv.label;
-    badge.style.background = lv.bg;
-    badge.style.color = lv.color;
-    badge.style.borderColor = lv.ring;
-  }
-
-  const timeEl = document.getElementById('sc-time-' + device);
-  if (timeEl) {
-    const t = latest?.datetime?.split(' ')?.[1]?.slice(0, 5) || '--';
-    timeEl.textContent = 'อัปเดต ' + t;
-  }
-
-  const canvas = document.getElementById('spark-' + device);
-  if (!canvas) return;
-  const last12 = records.slice(-12);
-  const data = last12.map(r => parseFloat(r.pm2_5)).filter(v => !isNaN(v));
-  if (data.length < 2) return;
-  if (_scSparkCharts[device]) { _scSparkCharts[device].destroy(); }
-  const ctx = canvas.getContext('2d');
-  const grad = ctx.createLinearGradient(0, 0, 0, 38);
-  grad.addColorStop(0, info.color + '44'); grad.addColorStop(1, info.color + '00');
-  _scSparkCharts[device] = new Chart(canvas, {
-    type: 'line',
-    data: { labels: last12.map((_, i) => i), datasets: [{ data, borderColor: info.color, backgroundColor: grad, borderWidth: 2, pointRadius: 0, tension: .4, fill: true }] },
-    options: { responsive: false, animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, beginAtZero: false } } }
-  });
-}
+const _sparkCharts = {}, _devCharts = {};
 let _latestWeather = null;
 
 /* ── Weather localStorage persistence ── */
@@ -1589,13 +1060,17 @@ function renderActiveDevice(){
 }
 
 /* ── Device tab switching ── */
+function switchDevice(device){
+  _activeDevice = device;
+  document.querySelectorAll('.dev-tab').forEach(b => { b.classList.toggle('active', b.dataset.device===device); });
+  document.querySelectorAll('.sensor-card').forEach(c => { c.classList.toggle('sc-active', c.dataset.device===device); });
+  renderActiveDevice();
+}
 document.querySelectorAll('.dev-tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.dev-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    _activeDevice = btn.dataset.device;
-    renderActiveDevice();
-  });
+  btn.addEventListener('click', () => switchDevice(btn.dataset.device));
+});
+document.querySelectorAll('.sensor-card').forEach(card => {
+  card.addEventListener('click', () => switchDevice(card.dataset.device));
 });
 
 /* ── Firebase: AI prediction ── */
@@ -1614,7 +1089,7 @@ function renderPredictionCard(d){
   badge.style.borderColor = aqi.color ? aqi.color + '55' : 'var(--border)';
 
   const hz = d.predict_horizon_s ? `อีก ${d.predict_horizon_s/60|0} นาที` : 'ทำนายล่วงหน้า';
-  document.querySelector('.predict-title').textContent = `🤖 AI ทำนาย (${hz})`;
+  document.querySelector('.predict-title').innerHTML = `<i class="ti ti-cpu"></i> AI ทำนาย (${hz})`;
 
   const conf = Math.min(Math.max(d.confidence || 0, 0), 100);
   const devColors = ['#4f87ff','#db2777','#d97706'];
@@ -1771,7 +1246,7 @@ document.getElementById('btn-allfields').addEventListener('click', () => {
     const disp = Number.isInteger(num) ? num : num.toFixed(1);
     const el = document.createElement('div'); el.className = 'mfield-card';
     el.innerHTML = `<div class="mfield-bar" style="background:${m.color}"></div><div class="mfield-icon">${m.icon}</div><div class="mfield-name">${m.name}</div><div class="mfield-val" style="color:${m.color}">${disp}</div><div class="mfield-unit">${m.unit}</div>` +
-      (delta !== null ? `<div class="mfield-delta" style="color:${delta>=0?'#ef4444':'#22c55e'}">${delta>=0?'↑':'↓'}${Math.abs(delta).toFixed(1)}</div>` : '') +
+      (delta !== null ? `<div class="mfield-delta" style="color:${delta>=0?'#dc2626':'#16a34a'}">${delta>=0?'↑':'↓'}${Math.abs(delta).toFixed(1)}</div>` : '') +
       (hist.length > 1 ? `<div class="mfield-spark"><canvas id="msp-${key}" width="120" height="30"></canvas></div>` : '');
     grid.appendChild(el);
     if(hist.length > 1) setTimeout(() => {
@@ -1793,7 +1268,7 @@ document.getElementById('btn-allfields').addEventListener('click', () => {
     const numFields = Object.keys(lat).filter(k => !SKIP.has(k.toLowerCase()) && typeof lat[k] === 'number');
 
     const sec = document.createElement('div'); sec.style.marginBottom = '18px';
-    sec.innerHTML = `<div class="dev-header"><div class="dev-tag" style="background:${color}15;border:1px solid ${color}40;color:${color}"><i class="fas fa-microchip" style="font-size:.65rem"></i> ${info.name} (${device}) <span style="opacity:.5;font-size:.65rem">${records.length} ครั้ง</span></div><div class="dev-ts">อัปเดต: ${lat?.datetime||'--'}</div></div>`;
+    sec.innerHTML = `<div class="dev-header"><div class="dev-tag" style="background:${color}15;border:1px solid ${color}40;color:${color}"><i class="ti ti-microchip" style="font-size:.65rem"></i> ${info.name} (${device}) <span style="opacity:.5;font-size:.65rem">${records.length} ครั้ง</span></div><div class="dev-ts">อัปเดต: ${lat?.datetime||'--'}</div></div>`;
     const devGrid = document.createElement('div'); devGrid.className = 'dev-grid';
 
     numFields.forEach((field, fi) => {
@@ -1805,7 +1280,7 @@ document.getElementById('btn-allfields').addEventListener('click', () => {
       const delta  = prev2 !== null ? cur - prev2 : null;
       const minV = Math.min(...hist), maxV = Math.max(...hist), avgV = hist.reduce((a,b)=>a+b,0)/hist.length;
       const card = document.createElement('div'); card.className = 'hc-card';
-      card.innerHTML = `<div class="hc-top"><div><div class="hc-name">${m.icon} ${m.name}</div><div style="display:flex;align-items:baseline;gap:5px"><span class="hc-val" style="color:${m.color}">${Number.isInteger(cur)?cur:cur.toFixed(1)}</span><span style="font-size:.68rem;color:var(--sub)">${m.unit}</span>${delta!==null?`<span style="font-size:.65rem;font-weight:700;color:${delta>=0?'#ef4444':'#22c55e'}">${delta>=0?'↑':'↓'}${Math.abs(delta).toFixed(1)}</span>`:''}</div></div><div class="hc-stats"><div>min <b style="color:var(--text)">${minV.toFixed(1)}</b></div><div>max <b style="color:var(--text)">${maxV.toFixed(1)}</b></div><div>avg <b style="color:var(--text)">${avgV.toFixed(1)}</b></div></div></div><div class="hc-chart"><canvas id="hcc-${device}-${field}"></canvas></div>`;
+      card.innerHTML = `<div class="hc-top"><div><div class="hc-name">${m.icon} ${m.name}</div><div style="display:flex;align-items:baseline;gap:5px"><span class="hc-val" style="color:${m.color}">${Number.isInteger(cur)?cur:cur.toFixed(1)}</span><span style="font-size:.68rem;color:var(--sub)">${m.unit}</span>${delta!==null?`<span style="font-size:.65rem;font-weight:700;color:${delta>=0?'#dc2626':'#16a34a'}">${delta>=0?'↑':'↓'}${Math.abs(delta).toFixed(1)}</span>`:''}</div></div><div class="hc-stats"><div>min <b style="color:var(--text)">${minV.toFixed(1)}</b></div><div>max <b style="color:var(--text)">${maxV.toFixed(1)}</b></div><div>avg <b style="color:var(--text)">${avgV.toFixed(1)}</b></div></div></div><div class="hc-chart"><canvas id="hcc-${device}-${field}"></canvas></div>`;
       devGrid.appendChild(card);
       setTimeout(() => {
         const c = document.getElementById(`hcc-${device}-${field}`); if(!c) return;
@@ -1839,13 +1314,13 @@ document.getElementById('btn-export-csv').addEventListener('click', () => {
 ['tile-weather','tile-hum','tile-wind'].forEach(id => {
   document.getElementById(id).addEventListener('click', () => {
     const wFields = _latestWeather ? [
-      {icon:'🌡️', name:'อุณหภูมิ',    val:_latestWeather.temp.toFixed(1),   unit:'°C',  color:'#f45b7a'},
-      {icon:'🤔', name:'รู้สึกเหมือน', val:_latestWeather.feels.toFixed(1),  unit:'°C',  color:'#fb923c'},
-      {icon:'💧', name:'ความชื้น',     val:_latestWeather.humidity,           unit:'%',   color:'#8b5cf6'},
-      {icon:'📵', name:'ความดัน',      val:_latestWeather.pressure,           unit:'hPa', color:'#0dbcb9'},
-      {icon:'💨', name:'ลม',           val:_latestWeather.wind.toFixed(1),    unit:'m/s', color:'#4f87ff'},
-      {icon:'🧊', name:'ฝน 1h',        val:_latestWeather.rain.toFixed(1),    unit:'mm',  color:'#60a5fa'},
-      {icon:'☁️', name:'เมฆ',          val:_latestWeather.clouds,             unit:'%',   color:'#94a3b8'},
+      {icon:'<i class="ti ti-thermometer"></i>',  name:'อุณหภูมิ',    val:_latestWeather.temp.toFixed(1),   unit:'°C',  color:'#f45b7a'},
+      {icon:'<i class="ti ti-temperature"></i>',  name:'รู้สึกเหมือน', val:_latestWeather.feels.toFixed(1),  unit:'°C',  color:'#fb923c'},
+      {icon:'<i class="ti ti-droplet"></i>',      name:'ความชื้น',     val:_latestWeather.humidity,           unit:'%',   color:'#8b5cf6'},
+      {icon:'<i class="ti ti-gauge"></i>',        name:'ความดัน',      val:_latestWeather.pressure,           unit:'hPa', color:'#0dbcb9'},
+      {icon:'<i class="ti ti-wind"></i>',         name:'ลม',           val:_latestWeather.wind.toFixed(1),    unit:'m/s', color:'#4f87ff'},
+      {icon:'<i class="ti ti-cloud-rain"></i>',   name:'ฝน 1h',        val:_latestWeather.rain.toFixed(1),    unit:'mm',  color:'#60a5fa'},
+      {icon:'<i class="ti ti-cloud"></i>',        name:'เมฆ',          val:_latestWeather.clouds,             unit:'%',   color:'#94a3b8'},
     ] : [];
     document.getElementById('w-detail-grid').innerHTML = wFields.map(f =>
       `<div class="mfield-card"><div class="mfield-bar" style="background:${f.color}"></div><div class="mfield-icon">${f.icon}</div><div class="mfield-name">${f.name}</div><div class="mfield-val" style="color:${f.color}">${f.val}</div><div class="mfield-unit">${f.unit}</div></div>`
@@ -1873,43 +1348,6 @@ document.getElementById('btn-export-csv').addEventListener('click', () => {
   });
 });
 
-/* ── Sensor card click → switch active device ── */
-function setSensorCardActive(device) {
-  document.querySelectorAll('.sensor-card').forEach(c => c.classList.remove('sc-active'));
-  const sc = document.getElementById('sc-' + device);
-  if (sc) sc.classList.add('sc-active');
-}
-document.querySelectorAll('.sensor-card').forEach(card => {
-  card.classList.add('ripple-el');
-  card.addEventListener('click', function(e) {
-    addRipple(e);
-    const device = card.dataset.device;
-    document.querySelectorAll('.dev-tab').forEach(b => b.classList.remove('active'));
-    const tab = document.querySelector(`.dev-tab[data-device="${device}"]`);
-    if (tab) tab.classList.add('active');
-    _activeDevice = device;
-    setSensorCardActive(device);
-    renderActiveDevice();
-  });
-});
-
-/* ── Keep sensor cards in sync when dev-tab clicked ── */
-document.querySelectorAll('.dev-tab').forEach(btn => {
-  btn.addEventListener('click', () => setSensorCardActive(btn.dataset.device), true);
-});
-
-/* ── Attach ripple to interactive elements ── */
-['dev-tab','twin-btn','more-btn','export-btn'].forEach(cls => {
-  document.querySelectorAll('.' + cls).forEach(el => {
-    el.classList.add('ripple-el');
-    el.addEventListener('click', addRipple);
-  });
-});
-document.querySelectorAll('.nav-item').forEach(el => {
-  el.classList.add('ripple-el');
-  el.addEventListener('click', addRipple);
-});
-
 /* ── 3D viewer controls ── */
 const viewer = document.querySelector('#kmutt-model');
 if(viewer){
@@ -1930,7 +1368,7 @@ if(viewer){
     if(hit != null){
       const p = hit.position;
       const s = `${p.x.toFixed(2)}m ${p.y.toFixed(2)}m ${p.z.toFixed(2)}m`;
-      console.log("📍 คลิกที่:", s);
+      console.log("📍 พิกัด:", s);
     }
   });
 }
