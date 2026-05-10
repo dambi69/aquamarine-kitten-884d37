@@ -1425,6 +1425,7 @@ function switchDevice(device){
   document.querySelectorAll('.dev-tab').forEach(b => { b.classList.toggle('active', b.dataset.device===device); });
   document.querySelectorAll('.sensor-card').forEach(c => { c.classList.toggle('sc-active', c.dataset.device===device); });
   renderActiveDevice();
+  if(_latestPrediction) renderPredictionCard(_latestPrediction);
 }
 window.switchDevice = switchDevice;
 document.querySelectorAll('.dev-tab').forEach(btn => {
@@ -1435,34 +1436,47 @@ document.querySelectorAll('.sensor-card').forEach(card => {
 });
 
 /* ── Firebase: AI prediction ── */
+let _latestPrediction = null;
+
 onValue(ref(fbDb, '/ai_analysis/prediction'), snap => {
   const d = snap.val();
   if(!d) return;
+  _latestPrediction = d;
   renderPredictionCard(d);
 });
 
 function renderPredictionCard(d){
-  const aqi = d.aqi_level || {};
-  const badge = document.getElementById('pred-aqi-badge');
-  badge.textContent = aqi.label || '--';
-  badge.style.background = aqi.color ? aqi.color + '22' : '';
-  badge.style.color = aqi.color || 'var(--sub)';
-  badge.style.borderColor = aqi.color ? aqi.color + '55' : 'var(--border)';
+  if(!d) return;
 
-  const hz = d.predict_horizon_s ? `อีก ${d.predict_horizon_s/60|0} นาที` : 'ทำนายล่วงหน้า';
-  document.querySelector('.predict-title').innerHTML = `<i class="ti ti-cpu"></i> AI ทำนาย (${hz})`;
+  /* Use per-device values when available, fall back to weighted average */
+  const dev   = d.per_device?.[_activeDevice];
+  const pm2_5 = dev?.pm2_5 ?? d.pm2_5;
+  const pm10  = dev?.pm10  ?? d.pm10;
+  const pm1   = dev?.pm1   ?? d.pm1;
 
-  const conf   = Math.min(Math.max(d.confidence || 0, 0), 100);
+  /* Confidence from per-device R², clamp to [0,100] */
+  const devR2 = dev ? Math.max(dev.r2 ?? 0, 0) : Math.max((d.r2_score ?? 0), 0);
+  const conf  = Math.min(devR2 * 100, 100);
   const confLabel = conf >= 90 ? 'น่าเชื่อถือมาก' : conf >= 75 ? 'น่าเชื่อถือ' : conf >= 55 ? 'ปานกลาง' : 'ความแม่นยำต่ำ';
   const confColor = conf >= 90 ? '#16a34a' : conf >= 75 ? '#65a30d' : conf >= 55 ? '#d97706' : '#dc2626';
   const confIcon  = conf >= 90 ? '✅' : conf >= 75 ? '👍' : conf >= 55 ? '⚠️' : '❓';
 
-  /* Delta vs current sensor value */
+  /* AQI badge — recompute from active device PM2.5 */
+  const lv    = getLevel(parseFloat(pm2_5)||0);
+  const badge = document.getElementById('pred-aqi-badge');
+  badge.textContent = lv.label || '--';
+  badge.style.background   = lv.color ? lv.color + '22' : '';
+  badge.style.color        = lv.color || 'var(--sub)';
+  badge.style.borderColor  = lv.color ? lv.color + '55' : 'var(--border)';
+
+  const hz = d.predict_horizon_s ? `อีก ${d.predict_horizon_s/60|0} นาที` : 'ทำนายล่วงหน้า';
+  document.querySelector('.predict-title').innerHTML = `<i class="ti ti-cpu"></i> AI ทำนาย (${hz} · ${_activeDevice})`;
+
+  /* Delta vs current sensor reading of the active device */
   const activeRecs = _devAll[_activeDevice];
-  const curPm  = activeRecs.length ? parseFloat(activeRecs[activeRecs.length-1]?.pm2_5)||0 : null;
-  const predPm = parseFloat(d.pm2_5)||0;
+  const curPm  = activeRecs?.length ? parseFloat(activeRecs[activeRecs.length-1]?.pm2_5)||0 : null;
+  const predPm = parseFloat(pm2_5)||0;
   const delta  = curPm !== null ? predPm - curPm : null;
-  const lv     = getLevel(predPm);
 
   let deltaHtml = '';
   if(delta !== null){
@@ -1476,7 +1490,7 @@ function renderPredictionCard(d){
     <!-- Primary: predicted PM2.5 -->
     <div style="background:${lv.color}18;border:1.5px solid ${lv.color}45;border-radius:18px;padding:16px 14px 12px;text-align:center;margin-bottom:10px">
       <div style="font-size:.62rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">PM2.5 ที่คาดว่าจะเป็น</div>
-      <div style="font-family:'DM Mono',monospace;font-size:3rem;font-weight:700;color:${lv.color};line-height:1;text-shadow:0 0 20px ${lv.color}55">${d.pm2_5}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:3rem;font-weight:700;color:${lv.color};line-height:1;text-shadow:0 0 20px ${lv.color}55">${pm2_5}</div>
       <div style="font-size:.68rem;color:var(--sub);margin-top:3px">µg/m³</div>
       ${deltaHtml}
       <div style="margin-top:8px"><span style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:99px;background:${lv.color}25;color:${lv.color};font-size:.72rem;font-weight:700;border:1.5px solid ${lv.color}50">${lv.label}</span></div>
@@ -1486,12 +1500,12 @@ function renderPredictionCard(d){
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:8px">
       <div style="background:var(--raised);border-radius:12px;padding:10px 6px;text-align:center;border:1px solid var(--border)">
         <div style="font-size:.57rem;font-weight:700;color:var(--sub);margin-bottom:3px">ฝุ่นขนาดเล็ก<br>(PM10)</div>
-        <div style="font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:600;color:var(--teal)">${d.pm10}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:600;color:var(--teal)">${pm10}</div>
         <div style="font-size:.52rem;color:var(--sub)">µg/m³</div>
       </div>
       <div style="background:var(--raised);border-radius:12px;padding:10px 6px;text-align:center;border:1px solid var(--border)">
         <div style="font-size:.57rem;font-weight:700;color:var(--sub);margin-bottom:3px">ฝุ่นละเอียด<br>(PM1.0)</div>
-        <div style="font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:600;color:#67e8f9">${d.pm1}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:600;color:#67e8f9">${pm1}</div>
         <div style="font-size:.52rem;color:var(--sub)">µg/m³</div>
       </div>
       <div style="background:${confColor}12;border-radius:12px;padding:10px 6px;text-align:center;border:1.5px solid ${confColor}35">
