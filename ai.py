@@ -70,7 +70,7 @@ MIN_ROWS_TO_TRAIN    = 30      # minimum rows for Ridge fallback
 MIN_ROWS_FOR_XGB     = 80      # minimum rows for XGBoost (use Ridge below this)
 MAX_RETRIES          = 3
 RETRY_DELAY          = 5
-HISTORY_LIMIT        = 1000    # records per device to fetch
+HISTORY_LIMIT        = 300     # recent regime only — old data has different distribution
 RETRAIN_R2_THRESHOLD = 0.35    # force retrain if avg R^2 drops below this
 
 # Column name aliases — maps canonical name -> possible Firebase field names
@@ -312,6 +312,7 @@ def _make_ridge_model() -> Pipeline:
         ('ridge', Ridge(alpha=10.0)),
     ])
 
+
 # ── Model persistence ─────────────────────────────────────────────────────────
 def load_saved_models() -> tuple[dict, dict, dict]:
     models, feat_cols, metrics = {}, {}, {}
@@ -319,6 +320,9 @@ def load_saved_models() -> tuple[dict, dict, dict]:
         device = path.stem.replace('dust_model_', '')
         try:
             saved = joblib.load(path)
+            if not saved.get('delta', False):
+                log.info(f"Skipping legacy model [{device}] (non-delta) — will retrain")
+                continue
             models[device]    = saved['model']
             feat_cols[device] = saved['features']
             metrics[device]   = saved.get('metrics', (0.0, 0.0))
@@ -341,8 +345,15 @@ def train_all_devices(device_dfs: dict) -> tuple[dict, dict, dict]:
             log.warning(f"  {device}: {n_rows} rows after feature eng — need ≥{MIN_ROWS_TO_TRAIN}, skip")
             continue
 
-        X = df_feat[f_cols].values
-        y = df_feat[TARGET_COLS].values
+        # Predict delta (PM_{t+1} - PM_t) — removes trend, makes target stationary
+        vals = df_feat[TARGET_COLS].values
+        X = df_feat[f_cols].values[:-1]
+        y = vals[1:] - vals[:-1]
+        n_rows = len(X)
+
+        if n_rows < MIN_ROWS_TO_TRAIN:
+            log.warning(f"  {device}: {n_rows} rows after delta — skip")
+            continue
 
         # Choose model based on available data
         use_xgb = n_rows >= MIN_ROWS_FOR_XGB
@@ -380,7 +391,7 @@ def train_all_devices(device_dfs: dict) -> tuple[dict, dict, dict]:
             perf = (mean_r2, mean_mae)
 
         path = MODEL_SAVE_PATH.format(device=device)
-        joblib.dump({'model': model, 'features': f_cols, 'metrics': perf, 'kind': model_kind}, path)
+        joblib.dump({'model': model, 'features': f_cols, 'metrics': perf, 'kind': model_kind, 'delta': True}, path)
         log.info(f"  Saved -> {path}")
 
         models[device]       = model
@@ -410,14 +421,20 @@ def predict_all(
                 continue
 
             f_cols = feat_cols[device]
-            latest = df_feat.sort_values('timestamp').iloc[[-1]].copy()
+            df_sorted = df_feat.sort_values('timestamp')
+            latest = df_sorted.iloc[[-1]].copy()
 
             # Align feature columns — use assign() to avoid pandas CoW issues
             missing = {c: 0.0 for c in f_cols if c not in latest.columns}
             if missing:
                 latest = latest.assign(**missing)
 
-            pred = np.clip(model.predict(latest[f_cols].values)[0], 0, None)
+            raw_pred = model.predict(latest[f_cols].values)[0]
+
+            # Model predicts delta; add to last known PM value
+            last_pm = df_sorted[TARGET_COLS].iloc[-1].values
+            delta = np.clip(raw_pred, -30, 30)
+            pred = np.clip(last_pm + delta, 0, None)
 
             r2 = metrics_dict.get(device, (0.0, 0.0))[0]
             w  = max(r2, 0.01)
