@@ -1201,7 +1201,9 @@ function updateSensorCard(device, records){
   if(htPm) htPm.textContent = pm.toFixed(1);
   const htBadge = document.getElementById('htab-badge-'+device);
   if(htBadge){ htBadge.textContent = lv.label; htBadge.style.background = lv.color+'55'; }
-  /* sparkline */
+  /* update twin comparison on every sensor refresh */
+  updateTwinCompare();
+  /* sparkline (canvas may not exist if sensor cards are hidden) */
   const canv = document.getElementById('spark-'+device);
   if(!canv) return;
   const pts = records.slice(-12).map(r=>parseFloat(r.pm2_5)||0);
@@ -1211,8 +1213,6 @@ function updateSensorCard(device, records){
     data:{ labels:pts.map((_,i)=>i), datasets:[{ data:pts, borderColor: lv.color||'#38bdf8', borderWidth:1.5, pointRadius:0, tension:.4, fill:true, backgroundColor: (lv.color||'#38bdf8')+'22' }] },
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}} }
   });
-  /* update twin comparison on every sensor refresh */
-  updateTwinCompare();
 }
 
 /* ── Hero update ── */
