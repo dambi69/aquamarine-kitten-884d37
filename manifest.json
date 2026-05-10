@@ -1,0 +1,27 @@
+{
+  "name": "SmartAir · KMUTT",
+  "short_name": "SmartAir",
+  "description": "ระบบติดตามคุณภาพอากาศ PM2.5 แบบ real-time มจธ. บางมด",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f0f5ff",
+  "theme_color": "#4f87ff",
+  "orientation": "portrait-primary",
+  "lang": "th",
+  "icons": [
+    {
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["utilities", "health", "environment"]
+}
