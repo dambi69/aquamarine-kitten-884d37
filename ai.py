@@ -49,6 +49,7 @@ log = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 SERVICE_ACCOUNT_KEY = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'serviceAccountKey.json')
+FIREBASE_CREDENTIALS_JSON = os.getenv('FIREBASE_CREDENTIALS_JSON')  # Railway: full JSON as env var
 DATABASE_URL        = 'https://test-70cc5-default-rtdb.asia-southeast1.firebasedatabase.app/'
 
 SENSOR_BASE      = '/sensor'
@@ -89,7 +90,11 @@ TS_CANDIDATES = ['timestamp', 'time', 'ts', 'Timestamp', 'Time', 'datetime', 'Da
 # ── Firebase ──────────────────────────────────────────────────────────────────
 def connect_firebase():
     if not firebase_admin._apps:
-        cred = credentials.Certificate(SERVICE_ACCOUNT_KEY)
+        if FIREBASE_CREDENTIALS_JSON:
+            import json
+            cred = credentials.Certificate(json.loads(FIREBASE_CREDENTIALS_JSON))
+        else:
+            cred = credentials.Certificate(SERVICE_ACCOUNT_KEY)
         firebase_admin.initialize_app(cred, {'databaseURL': DATABASE_URL})
     log.info("Firebase connected")
 
