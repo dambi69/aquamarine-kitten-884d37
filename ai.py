@@ -49,7 +49,7 @@ log = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 SERVICE_ACCOUNT_KEY = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'serviceAccountKey.json')
-FIREBASE_CREDENTIALS_JSON = os.getenv('FIREBASE_CREDENTIALS_JSON')  # Railway: full JSON as env var
+FIREBASE_CREDENTIALS_B64 = os.getenv('FIREBASE_CREDENTIALS_B64')  # Railway: base64-encoded JSON
 DATABASE_URL        = 'https://test-70cc5-default-rtdb.asia-southeast1.firebasedatabase.app/'
 
 SENSOR_BASE      = '/sensor'
@@ -90,19 +90,9 @@ TS_CANDIDATES = ['timestamp', 'time', 'ts', 'Timestamp', 'Time', 'datetime', 'Da
 # ── Firebase ──────────────────────────────────────────────────────────────────
 def connect_firebase():
     if not firebase_admin._apps:
-        if FIREBASE_CREDENTIALS_JSON:
-            import json, re
-            raw = FIREBASE_CREDENTIALS_JSON
-            try:
-                cred_dict = json.loads(raw)
-            except json.JSONDecodeError:
-                # Railway may unescaped \n inside private_key value — re-escape them
-                fixed = re.sub(
-                    r'("private_key"\s*:\s*")(.*?)(")',
-                    lambda m: m.group(1) + m.group(2).replace('\n', '\\n') + m.group(3),
-                    raw, flags=re.DOTALL
-                )
-                cred_dict = json.loads(fixed)
+        if FIREBASE_CREDENTIALS_B64:
+            import json, base64
+            cred_dict = json.loads(base64.b64decode(FIREBASE_CREDENTIALS_B64))
             cred = credentials.Certificate(cred_dict)
         else:
             cred = credentials.Certificate(SERVICE_ACCOUNT_KEY)
