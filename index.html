@@ -392,6 +392,36 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 
 /* ── Section head ── */
 .section-head { font-size:.78rem; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; margin-top:4px; display:flex; align-items:center; gap:6px; }
+
+/* ── Health metric card ── */
+.health-card { display:flex; align-items:center; gap:14px; background:var(--glass); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-radius:20px; padding:14px 16px; margin-bottom:12px; box-shadow:var(--glass-shadow); }
+.health-cig { font-family:'DM Mono',monospace; font-size:1.7rem; font-weight:600; color:var(--current-c); line-height:1; transition:color .6s; }
+
+/* ── AI Insight banner ── */
+.insight-banner { background:var(--raised); border-radius:12px; padding:10px 12px; margin-top:10px; font-size:.76rem; color:var(--text); line-height:1.6; border-left:3px solid var(--blue); display:none; }
+.insight-banner b { color:var(--blue); }
+.insight-banner.warn b { color:var(--amber); }
+.insight-banner.warn { border-left-color:var(--amber); }
+
+/* ── Hourly chart ── */
+.hour-hint { font-size:.63rem; color:var(--sub); margin-top:7px; text-align:center; }
+
+/* ── Weekly trend card ── */
+.week-card { background:var(--glass); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-radius:20px; padding:14px 16px; margin-bottom:12px; box-shadow:var(--glass-shadow); display:flex; align-items:center; gap:14px; }
+.week-delta { font-family:'DM Mono',monospace; font-size:1.15rem; font-weight:700; line-height:1; }
+
+/* ── Twin sensor comparison ── */
+.twin-compare { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 14px 4px; }
+.tc-item { text-align:center; padding:10px 6px 8px; border-radius:14px; background:var(--raised); border:1.5px solid var(--border); transition:border-color .3s,background .3s; cursor:pointer; }
+.tc-name { font-size:.6rem; font-weight:700; color:var(--sub); margin-bottom:4px; display:flex; align-items:center; justify-content:center; gap:4px; }
+.tc-pm { font-family:'DM Mono',monospace; font-size:1.15rem; font-weight:600; line-height:1; }
+.tc-lv { font-size:.55rem; font-weight:700; margin-top:3px; }
+.tc-trend { font-size:.8rem; margin-top:2px; font-weight:700; }
+
+/* ── AQI color legend ── */
+.twin-legend { display:flex; flex-wrap:wrap; gap:7px; padding:8px 14px 12px; }
+.tl-item { display:flex; align-items:center; gap:4px; font-size:.6rem; color:var(--sub); font-weight:500; }
+.tl-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -527,6 +557,19 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
           <div class="stat-item"><div class="stat-label">เทียบก่อนหน้า</div><div class="stat-val skel" id="stat-delta" style="min-width:36px">--</div></div>
         </div>
 
+        <!-- Health Impact card -->
+        <div class="health-card fade" id="health-card" style="animation-delay:.11s">
+          <div style="font-size:2.1rem;flex-shrink:0">🫁</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px">
+              <span class="health-cig" id="health-cig-num">--</span>
+              <span style="font-size:.68rem;color:var(--sub);font-weight:600">มวน/วัน</span>
+            </div>
+            <div style="font-size:.63rem;color:var(--sub)">เทียบเท่าการสูดควันบุหรี่ (WHO)</div>
+            <div style="font-size:.72rem;color:var(--sub);margin-top:5px;line-height:1.45" id="health-desc"></div>
+          </div>
+        </div>
+
         <div class="gauge-wrap fade" style="animation-delay:.12s">
           <div class="gauge-title"><i class="ti ti-chart-bar"></i> ระดับ PM2.5 อยู่ที่ไหน?</div>
           <div class="gauge-bar-bg"><div class="gauge-pointer" id="gauge-ptr"><i class="ti ti-map-pin" style="font-size:.6rem"></i></div></div>
@@ -557,6 +600,7 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
           <div id="pred-body">
             <div class="pred-nodata">รอข้อมูลจาก AI... <br><span style="font-size:.68rem">กรุณารัน ai.py</span></div>
           </div>
+          <div class="insight-banner" id="insight-banner"></div>
         </div>
       </div>
     </div>
@@ -590,6 +634,28 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
       </div>
     </div>
 
+    <!-- Hourly average chart -->
+    <div class="chart-card fade" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+        <div class="chart-title" style="margin:0"><i class="ti ti-clock-24"></i> PM2.5 เฉลี่ยรายชั่วโมง (24 ชม.)</div>
+        <div style="font-size:.62rem;color:var(--sub);font-weight:600" id="hour-best-label">--</div>
+      </div>
+      <div style="height:120px"><canvas id="hour-chart"></canvas></div>
+      <div class="hour-hint">แท่งสีเขียว = ช่วงอากาศดีที่สุด — เหมาะสำหรับออกกำลังกายกลางแจ้ง</div>
+    </div>
+
+    <!-- Weekly trend card -->
+    <div class="week-card fade" id="week-card" style="margin-bottom:12px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.7rem;font-weight:700;color:var(--sub);margin-bottom:6px;display:flex;align-items:center;gap:5px"><i class="ti ti-calendar-week"></i> แนวโน้มช่วงข้อมูลที่มี</div>
+        <div style="height:34px"><canvas id="week-spark" height="34"></canvas></div>
+      </div>
+      <div style="flex-shrink:0;text-align:right;padding-left:14px">
+        <div class="week-delta" id="week-delta">--</div>
+        <div style="font-size:.63rem;color:var(--sub);margin-top:3px" id="week-label">เทียบจุดเริ่ม</div>
+      </div>
+    </div>
+
     <button class="more-btn fade" id="btn-allfields">
       <i class="ti ti-microchip"></i> ดูค่าทั้งหมดจากเซนเซอร์ (ทุก device)
     </button>
@@ -597,9 +663,35 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
     <!-- 3D Digital Twin -->
     <div class="twin-card fade">
       <div class="twin-header">
-        <div class="chart-title" style="margin:0"><i class="ti ti-map-2"></i> จุดติดตั้งเซนเซอร์ (Digital Twin)</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div class="chart-title" style="margin:0"><i class="ti ti-map-2"></i> จุดติดตั้งเซนเซอร์ (Digital Twin)</div>
+          <div style="font-size:.62rem;color:var(--sub);font-weight:500">แตะ hotspot เพื่อดูรายละเอียด</div>
+        </div>
       </div>
-      <div class="twin-viewer">
+
+      <!-- Sensor comparison bar -->
+      <div class="twin-compare">
+        <div class="tc-item" id="tc-device1" onclick="switchDevice('device1')">
+          <div class="tc-name" style="color:#4f87ff"><i class="ti ti-antenna-bars-5"></i> S12</div>
+          <div class="tc-pm" id="tc-pm-device1">--</div>
+          <div class="tc-lv" id="tc-lv-device1">--</div>
+          <div class="tc-trend" id="tc-trend-device1">→</div>
+        </div>
+        <div class="tc-item" id="tc-device2" onclick="switchDevice('device2')">
+          <div class="tc-name" style="color:#db2777"><i class="ti ti-antenna-bars-5"></i> SCL</div>
+          <div class="tc-pm" id="tc-pm-device2">--</div>
+          <div class="tc-lv" id="tc-lv-device2">--</div>
+          <div class="tc-trend" id="tc-trend-device2">→</div>
+        </div>
+        <div class="tc-item" id="tc-device3" onclick="switchDevice('device3')">
+          <div class="tc-name" style="color:#d97706"><i class="ti ti-antenna-bars-5"></i> S14</div>
+          <div class="tc-pm" id="tc-pm-device3">--</div>
+          <div class="tc-lv" id="tc-lv-device3">--</div>
+          <div class="tc-trend" id="tc-trend-device3">→</div>
+        </div>
+      </div>
+
+      <div class="twin-viewer" style="margin-top:8px">
         <model-viewer id="kmutt-model"
           src="models/kmutt-draft.glb"
           camera-controls auto-rotate
@@ -610,9 +702,12 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
             data-position="-363.92m 223.88m -972.39m"
             data-normal="0m 1m 0m">
             <div class="HotspotAnnotation">
-              S12 Sensor<br>
-              <span style="font-size:1.15rem;font-weight:800" id="hs-ene-pm">--</span>
-              <span style="font-size:.65rem;color:var(--sub)">µg/m³</span>
+              <div style="font-size:.6rem;font-weight:700;color:#4f87ff;margin-bottom:2px">S12 Sensor</div>
+              <div style="display:flex;align-items:baseline;gap:3px">
+                <span style="font-size:1.2rem;font-weight:800" id="hs-ene-pm">--</span>
+                <span style="font-size:.6rem;color:#64748b">µg/m³</span>
+              </div>
+              <div style="font-size:.6rem;font-weight:700;margin-top:1px" id="hs-ene-status">--</div>
             </div>
           </button>
 
@@ -621,9 +716,12 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
             data-normal="0m 1m 0m"
             style="background:#db2777">
             <div class="HotspotAnnotation">
-              SCL Sensor<br>
-              <span style="font-size:1.15rem;font-weight:800" id="hs-dev2-pm">--</span>
-              <span style="font-size:.65rem;color:var(--sub)">µg/m³</span>
+              <div style="font-size:.6rem;font-weight:700;color:#db2777;margin-bottom:2px">SCL Sensor</div>
+              <div style="display:flex;align-items:baseline;gap:3px">
+                <span style="font-size:1.2rem;font-weight:800" id="hs-dev2-pm">--</span>
+                <span style="font-size:.6rem;color:#64748b">µg/m³</span>
+              </div>
+              <div style="font-size:.6rem;font-weight:700;margin-top:1px" id="hs-dev2-status">--</div>
             </div>
           </button>
 
@@ -632,19 +730,32 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
             data-normal="0m 1m 0m"
             style="background:#d97706">
             <div class="HotspotAnnotation">
-              S14 Sensor<br>
-              <span style="font-size:1.15rem;font-weight:800" id="hs-dev3-pm">--</span>
-              <span style="font-size:.65rem;color:var(--sub)">µg/m³</span>
+              <div style="font-size:.6rem;font-weight:700;color:#d97706;margin-bottom:2px">S14 Sensor</div>
+              <div style="display:flex;align-items:baseline;gap:3px">
+                <span style="font-size:1.2rem;font-weight:800" id="hs-dev3-pm">--</span>
+                <span style="font-size:.6rem;color:#64748b">µg/m³</span>
+              </div>
+              <div style="font-size:.6rem;font-weight:700;margin-top:1px" id="hs-dev3-status">--</div>
             </div>
           </button>
 
         </model-viewer>
       </div>
+
       <div class="twin-btns">
         <button class="twin-btn" id="btn-cam-reset"><i class="ti ti-home"></i> มุมมองเริ่มต้น</button>
         <button class="twin-btn ene"  id="btn-cam-ene"><i class="ti ti-antenna-bars-5"></i> S12</button>
         <button class="twin-btn dev2" id="btn-cam-dev2"><i class="ti ti-antenna-bars-5"></i> SCL</button>
         <button class="twin-btn dev3" id="btn-cam-dev3"><i class="ti ti-antenna-bars-5"></i> S14</button>
+      </div>
+
+      <!-- AQI color legend -->
+      <div class="twin-legend">
+        <div class="tl-item"><div class="tl-dot" style="background:#16a34a"></div>ดีมาก (0–25)</div>
+        <div class="tl-item"><div class="tl-dot" style="background:#65a30d"></div>ดี (26–37)</div>
+        <div class="tl-item"><div class="tl-dot" style="background:#d97706"></div>เริ่มมีผล (38–50)</div>
+        <div class="tl-item"><div class="tl-dot" style="background:#dc2626"></div>ไม่ดี (51–90)</div>
+        <div class="tl-item"><div class="tl-dot" style="background:#7c2d12"></div>อันตราย (&gt;90)</div>
       </div>
     </div>
   </section>
@@ -969,6 +1080,8 @@ function updateSensorCard(device, records){
     data:{ labels:pts.map((_,i)=>i), datasets:[{ data:pts, borderColor: lv.color||'#4f87ff', borderWidth:1.5, pointRadius:0, tension:.4, fill:true, backgroundColor: (lv.color||'#4f87ff')+'22' }] },
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}} }
   });
+  /* update twin comparison on every sensor refresh */
+  updateTwinCompare();
 }
 
 /* ── Hero update ── */
@@ -1175,6 +1288,11 @@ function renderActiveDevice(){
   const allPm  = records.map(r => parseFloat(r.pm2_5)).filter(v => !isNaN(v));
   updateHero(pmNow, latest?.datetime || '', allPm);
   updateForecast();
+  /* new features */
+  updateHealthMetric(pmNow);
+  updateInsightText(pmNow, records);
+  buildHourChart(records);
+  buildWeeklyTrend(records);
 }
 
 /* ── Device tab switching ── */
@@ -1184,6 +1302,7 @@ function switchDevice(device){
   document.querySelectorAll('.sensor-card').forEach(c => { c.classList.toggle('sc-active', c.dataset.device===device); });
   renderActiveDevice();
 }
+window.switchDevice = switchDevice;
 document.querySelectorAll('.dev-tab').forEach(btn => {
   btn.addEventListener('click', () => switchDevice(btn.dataset.device));
 });
@@ -1501,6 +1620,148 @@ document.querySelectorAll('.fcst-btn').forEach(btn => {
     updateForecast();
   });
 });
+
+/* ══════════════════════════════════════════
+   NEW FEATURES
+   ══════════════════════════════════════════ */
+
+/* ── 1. Health metric (cigarette equivalent, WHO formula) ── */
+function updateHealthMetric(pm){
+  const cig = Math.max(0, (pm - 5) / 22);
+  const el = document.getElementById('health-cig-num');
+  if(el){ el.textContent = cig.toFixed(1); el.style.color = 'var(--current-c)'; }
+  const desc = document.getElementById('health-desc');
+  if(!desc) return;
+  if(pm <= 12)      desc.textContent = 'ระดับนี้ปลอดภัย — เหมาะสำหรับทุกกิจกรรมกลางแจ้ง';
+  else if(pm <= 25) desc.textContent = 'อยู่ในเกณฑ์ดี — กิจกรรมกลางแจ้งทำได้ตามปกติ';
+  else if(pm <= 37) desc.textContent = 'กลุ่มเสี่ยง (เด็ก/ผู้สูงอายุ) ควรเฝ้าระวัง';
+  else if(pm <= 50) desc.textContent = 'ควรลดเวลากลางแจ้ง และสวมหน้ากาก N95';
+  else              desc.textContent = 'อันตราย — ควรอยู่ในอาคาร หลีกเลี่ยงกิจกรรมนอกบ้าน';
+}
+
+/* ── 2. AI Insight — natural language from OLS forecast ── */
+function updateInsightText(pm, records){
+  const el = document.getElementById('insight-banner');
+  if(!el) return;
+  if(!_fcM || records.length < 6){ el.style.display = 'none'; return; }
+  const intv  = _estIntv(records);
+  const sph   = Math.max(1, Math.round(3.6e6 / intv));
+  const fc1   = _runFc(records, sph);
+  const fc3   = _runFc(records, sph * 3);
+  if(!fc1 || !fc3){ el.style.display = 'none'; return; }
+  const v1    = fc1.pred[fc1.pred.length - 1];
+  const v3    = fc3.pred[fc3.pred.length - 1];
+  const lv1   = getLevel(v1);
+  const diff  = v1 - pm;
+  const trend = diff >  3 ? '📈 เพิ่มขึ้น' : diff < -3 ? '📉 ลดลง' : '➡️ ทรงตัว';
+  const warn  = v3 > 50;
+  let act = '';
+  if(v3 <= 25)      act = 'เหมาะสำหรับออกกำลังกายกลางแจ้ง';
+  else if(v3 <= 37) act = 'กิจกรรมกลางแจ้งทำได้ตามปกติ';
+  else if(v3 <= 50) act = 'กลุ่มเสี่ยงควรเตรียมหน้ากาก N95';
+  else              act = 'ควรลดเวลาอยู่กลางแจ้ง';
+  const h3 = new Date(Date.now() + 3 * 3600000);
+  const h3s = `${String(h3.getHours()).padStart(2,'0')}:${String(h3.getMinutes()).padStart(2,'0')}`;
+  el.className = 'insight-banner' + (warn ? ' warn' : '');
+  el.style.display = '';
+  el.innerHTML = `${trend} อีก 1 ชม. PM2.5 จะเป็น <b>${v1.toFixed(1)} µg/m³</b> (${lv1.label})<br>ช่วง ~${h3s} น. คาดว่า ${v3.toFixed(1)} µg/m³ — ${act}`;
+}
+
+/* ── 3. Hourly average chart ── */
+let _hourChart = null;
+function buildHourChart(records){
+  const canvas = document.getElementById('hour-chart');
+  if(!canvas) return;
+  const sums = new Array(24).fill(0), cnts = new Array(24).fill(0);
+  records.forEach(r => {
+    const dt = new Date((r.datetime||'').replace(' ','T'));
+    const h  = dt.getHours();
+    if(!isNaN(h)){ sums[h] += parseFloat(r.pm2_5)||0; cnts[h]++; }
+  });
+  const avgs   = sums.map((s,i) => cnts[i] ? +(s/cnts[i]).toFixed(1) : null);
+  const labels = Array.from({length:24}, (_,i) => String(i).padStart(2,'0') + ':00');
+  const colors = avgs.map(v => !v ? 'rgba(128,128,128,.18)' : v <= 25 ? '#16a34a' : v <= 37 ? '#65a30d' : v <= 50 ? '#d97706' : v <= 90 ? '#dc2626' : '#7c2d12');
+  /* find best hour */
+  let bestH = -1, bestV = Infinity;
+  avgs.forEach((v,i) => { if(v !== null && v < bestV){ bestV = v; bestH = i; } });
+  const lbl = document.getElementById('hour-best-label');
+  if(lbl && bestH >= 0) lbl.textContent = `🌟 ดีที่สุด ${String(bestH).padStart(2,'0')}:00 น. (${bestV} µg/m³)`;
+  if(_hourChart){ _hourChart.destroy(); _hourChart = null; }
+  _hourChart = new Chart(canvas, { type:'bar',
+    data:{ labels, datasets:[{ data:avgs, backgroundColor:colors, borderRadius:5, borderSkipped:false }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ title:t=>`${t[0].label}`, label:c => c.parsed.y !== null ? `เฉลี่ย ${c.parsed.y} µg/m³` : 'ไม่มีข้อมูล' } } },
+      scales:{ y:{ grid:{color:gridColor()}, ticks:{color:tickColor(),font:{size:9,family:'DM Mono'}}, beginAtZero:true },
+               x:{ grid:{display:false}, ticks:{color:tickColor(),font:{size:8},maxTicksLimit:8} } } }
+  });
+}
+
+/* ── 4. Weekly trend sparkline ── */
+let _weekChart = null;
+function buildWeeklyTrend(records){
+  const byDate = {};
+  records.forEach(r => {
+    const date = (r.datetime||'').split(' ')[0];
+    if(!date) return;
+    if(!byDate[date]) byDate[date] = [];
+    byDate[date].push(parseFloat(r.pm2_5)||0);
+  });
+  const dates = Object.keys(byDate).sort();
+  if(dates.length < 2) return;
+  const avgs  = dates.map(d => { const v = byDate[d]; return +(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1); });
+  const first = avgs[0], last = avgs[avgs.length-1];
+  const pct   = ((last - first) / first * 100);
+  const better = pct < 0;
+  const color  = better ? '#16a34a' : '#dc2626';
+  const dEl = document.getElementById('week-delta');
+  const lEl = document.getElementById('week-label');
+  if(dEl){ dEl.textContent = (better ? '↓' : '↑') + Math.abs(pct).toFixed(0) + '%'; dEl.style.color = color; }
+  if(lEl){ lEl.textContent = better ? 'อากาศดีขึ้นเทียบต้นช่วง' : 'อากาศแย่ลงเทียบต้นช่วง'; }
+  const canvas = document.getElementById('week-spark');
+  if(!canvas) return;
+  if(_weekChart){ _weekChart.destroy(); _weekChart = null; }
+  const g = canvas.getContext('2d').createLinearGradient(0,0,0,34);
+  g.addColorStop(0, color + '40'); g.addColorStop(1, color + '00');
+  _weekChart = new Chart(canvas, { type:'line',
+    data:{ labels: dates.map(d=>d.slice(5)), datasets:[{ data:avgs, borderColor:color, backgroundColor:g, borderWidth:2, pointRadius:0, tension:.4, fill:true }] },
+    options:{ responsive:true, maintainAspectRatio:false, animation:false,
+      plugins:{legend:{display:false},tooltip:{enabled:false}},
+      scales:{x:{display:false},y:{display:false,beginAtZero:false}} }
+  });
+}
+
+/* ── 5. Twin comparison bar ── */
+function updateTwinCompare(){
+  let bestPm = Infinity, bestDev = null;
+  Object.keys(_devAll).forEach(dev => {
+    const recs = _devAll[dev]; if(!recs.length) return;
+    const pm = parseFloat(recs[recs.length-1]?.pm2_5)||0;
+    if(pm < bestPm){ bestPm = pm; bestDev = dev; }
+  });
+  Object.keys(_devAll).forEach(dev => {
+    const recs = _devAll[dev]; if(!recs.length) return;
+    const pm   = parseFloat(recs[recs.length-1]?.pm2_5)||0;
+    const lv   = getLevel(pm);
+    const prev = recs.length >= 2 ? parseFloat(recs[recs.length-2]?.pm2_5)||pm : pm;
+    const diff = pm - prev;
+    const trendIcon  = diff >  1.5 ? '↑' : diff < -1.5 ? '↓' : '→';
+    const trendColor = diff >  1.5 ? '#dc2626' : diff < -1.5 ? '#16a34a' : 'var(--sub)';
+    const pmEl   = document.getElementById('tc-pm-'  + dev);
+    const lvEl   = document.getElementById('tc-lv-'  + dev);
+    const trEl   = document.getElementById('tc-trend-'+ dev);
+    const tcItem = document.getElementById('tc-' + dev);
+    if(pmEl)  { pmEl.textContent = pm.toFixed(1); pmEl.style.color = lv.color; }
+    if(lvEl)  { lvEl.textContent = lv.label; lvEl.style.color = lv.color; }
+    if(trEl)  { trEl.textContent = trendIcon; trEl.style.color = trendColor; }
+    if(tcItem){ tcItem.style.borderColor = lv.color + '55'; tcItem.style.background = dev === bestDev ? lv.color + '18' : ''; }
+    /* Update hotspot status label */
+    const info = DEVICE_INFO[dev];
+    const hsStatus = document.getElementById(info.hsId.replace('-pm','-status'));
+    if(hsStatus){ hsStatus.textContent = lv.label + ' ' + trendIcon; hsStatus.style.color = lv.color; }
+  });
+}
+
+/* (new features wired into existing functions below) */
 </script>
 </body>
 </html>
