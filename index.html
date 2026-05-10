@@ -422,6 +422,24 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 .twin-legend { display:flex; flex-wrap:wrap; gap:7px; padding:8px 14px 12px; }
 .tl-item { display:flex; align-items:center; gap:4px; font-size:.6rem; color:var(--sub); font-weight:500; }
 .tl-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+/* ── AQI Dot Timeline ── */
+.dot-timeline { background:var(--glass); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-radius:20px; padding:14px 16px 12px; margin-bottom:12px; box-shadow:var(--glass-shadow); }
+.dot-row { display:flex; flex-wrap:wrap; gap:4px; line-height:1; }
+.aq-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; transition:transform .15s, box-shadow .15s; cursor:default; }
+.aq-dot:hover { transform:scale(1.9); box-shadow:0 0 6px currentColor; }
+
+/* ── Accordion ── */
+.acc-wrap { margin-bottom:10px; }
+.acc-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; cursor:pointer; background:var(--glass); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); transition:border-radius .25s, border-bottom-color .25s; box-shadow:var(--glass-shadow); user-select:none; -webkit-user-select:none; }
+.acc-wrap.is-open .acc-header  { border-radius:20px 20px 0 0; border-bottom-color:transparent; box-shadow:none; }
+.acc-wrap.is-closed .acc-header { border-radius:20px; }
+.acc-title { font-size:.76rem; font-weight:600; color:var(--sub); }
+.acc-chevron { font-size:.9rem; color:var(--sub); transition:transform .3s cubic-bezier(.16,1,.3,1); flex-shrink:0; margin-left:6px; }
+.acc-wrap.is-open .acc-chevron { transform:rotate(180deg); }
+.acc-body { overflow:hidden; max-height:0; transition:max-height .38s cubic-bezier(.16,1,.3,1); background:var(--glass); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-top:none; border-radius:0 0 20px 20px; box-shadow:var(--glass-shadow); }
+.acc-wrap.is-open .acc-body { max-height:520px; }
+.acc-inner { padding:12px 16px 14px; }
 </style>
 </head>
 <body>
@@ -510,6 +528,20 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
         <div class="sc-time" id="sc-time-device3">--</div>
         <div class="sc-spark"><canvas id="spark-device3"></canvas></div>
       </div>
+    </div>
+
+    <!-- AQI Dot Timeline -->
+    <div class="dot-timeline fade" style="animation-delay:.07s">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:.72rem;font-weight:700;color:var(--sub);display:flex;align-items:center;gap:6px"><i class="ti ti-timeline"></i> ประวัติคุณภาพอากาศ (จุดล่าสุด)</div>
+        <div style="display:flex;gap:9px;font-size:.6rem;color:var(--sub);flex-shrink:0">
+          <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;flex-shrink:0"></span>ดี</span>
+          <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#d97706;display:inline-block;flex-shrink:0"></span>ปาน</span>
+          <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#dc2626;display:inline-block;flex-shrink:0"></span>ไม่ดี</span>
+        </div>
+      </div>
+      <div class="dot-row" id="dot-row"></div>
+      <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--sub);margin-top:8px"><span>← ก่อนหน้า</span><span>ล่าสุด →</span></div>
     </div>
 
     <div class="home-grid">
@@ -615,49 +647,84 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
   <section class="tab-section" id="tab-stats">
     <div class="section-head"><i class="ti ti-chart-line"></i> ประวัติ & สถิติ</div>
 
-    <div class="chart-card fade" style="margin-bottom:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
-        <div class="chart-title" style="margin:0"><i class="ti ti-trending-up"></i> PM2.5 + AI ทำนายล่วงหน้า</div>
-        <button class="export-btn" id="btn-export-csv"><i class="ti ti-download"></i> CSV</button>
+    <!-- Accordion 1: PM2.5 + forecast (open by default) -->
+    <div class="acc-wrap is-open fade" id="accw-trend" style="animation-delay:.06s">
+      <div class="acc-header" onclick="toggleAcc('accw-trend')">
+        <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-trending-up" style="color:var(--blue)"></i><span class="acc-title">PM2.5 + AI ทำนายล่วงหน้า</span></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button class="export-btn" id="btn-export-csv" onclick="event.stopPropagation()"><i class="ti ti-download"></i> CSV</button>
+          <i class="ti ti-chevron-down acc-chevron"></i>
+        </div>
       </div>
-      <div class="chart-wrap" style="height:150px"><canvas id="trend-chart"></canvas></div>
-      <div class="forecast-controls">
-        <span class="fcst-label">🔮 ทำนาย:</span>
-        <button class="fcst-btn active" data-h="1">+1h</button>
-        <button class="fcst-btn" data-h="3">+3h</button>
-        <button class="fcst-btn" data-h="6">+6h</button>
-        <button class="fcst-btn" data-h="12">+12h</button>
-        <span class="fcst-info" id="fcst-info"></span>
+      <div class="acc-body" id="acc-body-trend">
+        <div class="acc-inner">
+          <div class="chart-wrap" style="height:150px"><canvas id="trend-chart"></canvas></div>
+          <div class="forecast-controls">
+            <span class="fcst-label">🔮 ทำนาย:</span>
+            <button class="fcst-btn active" data-h="1">+1h</button>
+            <button class="fcst-btn" data-h="3">+3h</button>
+            <button class="fcst-btn" data-h="6">+6h</button>
+            <button class="fcst-btn" data-h="12">+12h</button>
+            <span class="fcst-info" id="fcst-info"></span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="chart-card fade" style="margin-bottom:10px">
-      <div class="chart-title"><i class="ti ti-cpu"></i> ประวัติการทำนาย AI — PM2.5 (20 ครั้งล่าสุด)</div>
-      <div style="height:120px;position:relative">
-        <canvas id="predict-hist-chart"></canvas>
-        <div id="pred-hist-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--sub)">รอข้อมูลจาก AI...</div>
+    <!-- Accordion 2: AI prediction history (closed by default) -->
+    <div class="acc-wrap is-closed fade" id="accw-hist" style="animation-delay:.08s">
+      <div class="acc-header" onclick="toggleAcc('accw-hist')">
+        <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-cpu" style="color:var(--blue)"></i><span class="acc-title">ประวัติการทำนาย AI — PM2.5</span></div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:.62rem;color:var(--sub)">20 ครั้งล่าสุด</span>
+          <i class="ti ti-chevron-down acc-chevron"></i>
+        </div>
+      </div>
+      <div class="acc-body" id="acc-body-hist">
+        <div class="acc-inner">
+          <div style="height:120px;position:relative">
+            <canvas id="predict-hist-chart"></canvas>
+            <div id="pred-hist-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--sub)">รอข้อมูลจาก AI...</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Hourly average chart -->
-    <div class="chart-card fade" style="margin-bottom:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
-        <div class="chart-title" style="margin:0"><i class="ti ti-clock-24"></i> PM2.5 เฉลี่ยรายชั่วโมง (24 ชม.)</div>
-        <div style="font-size:.62rem;color:var(--sub);font-weight:600" id="hour-best-label">--</div>
+    <!-- Accordion 3: Hourly average (closed by default) -->
+    <div class="acc-wrap is-closed fade" id="accw-hour" style="animation-delay:.09s">
+      <div class="acc-header" onclick="toggleAcc('accw-hour')">
+        <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-clock-24" style="color:var(--teal)"></i><span class="acc-title">PM2.5 เฉลี่ยรายชั่วโมง (24 ชม.)</span></div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:.62rem;color:var(--sub);font-weight:600" id="hour-best-label">--</span>
+          <i class="ti ti-chevron-down acc-chevron"></i>
+        </div>
       </div>
-      <div style="height:120px"><canvas id="hour-chart"></canvas></div>
-      <div class="hour-hint">แท่งสีเขียว = ช่วงอากาศดีที่สุด — เหมาะสำหรับออกกำลังกายกลางแจ้ง</div>
+      <div class="acc-body" id="acc-body-hour">
+        <div class="acc-inner">
+          <div style="height:120px"><canvas id="hour-chart"></canvas></div>
+          <div class="hour-hint">แท่งสีเขียว = ช่วงอากาศดีที่สุด — เหมาะสำหรับออกกำลังกายกลางแจ้ง</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Weekly trend card -->
-    <div class="week-card fade" id="week-card" style="margin-bottom:12px">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:.7rem;font-weight:700;color:var(--sub);margin-bottom:6px;display:flex;align-items:center;gap:5px"><i class="ti ti-calendar-week"></i> แนวโน้มช่วงข้อมูลที่มี</div>
-        <div style="height:34px"><canvas id="week-spark" height="34"></canvas></div>
+    <!-- Accordion 4: Weekly trend (closed by default) -->
+    <div class="acc-wrap is-closed fade" id="accw-week" style="animation-delay:.10s">
+      <div class="acc-header" onclick="toggleAcc('accw-week')">
+        <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-calendar-week" style="color:var(--violet)"></i><span class="acc-title">แนวโน้มช่วงข้อมูลที่มี</span></div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span class="week-delta" id="week-delta" style="font-size:.82rem">--</span>
+          <i class="ti ti-chevron-down acc-chevron"></i>
+        </div>
       </div>
-      <div style="flex-shrink:0;text-align:right;padding-left:14px">
-        <div class="week-delta" id="week-delta">--</div>
-        <div style="font-size:.63rem;color:var(--sub);margin-top:3px" id="week-label">เทียบจุดเริ่ม</div>
+      <div class="acc-body" id="acc-body-week">
+        <div class="acc-inner" style="display:flex;align-items:center;gap:14px">
+          <div style="flex:1;min-width:0">
+            <div style="height:50px"><canvas id="week-spark" height="50"></canvas></div>
+          </div>
+          <div style="flex-shrink:0;text-align:right">
+            <div style="font-size:.65rem;color:var(--sub);margin-top:3px" id="week-label">เทียบจุดเริ่ม</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -773,18 +840,59 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
       <div class="tile" id="tile-hum"><div class="tile-emoji"><i class="ti ti-droplet" style="color:#8b5cf6"></i></div><div class="tile-val" id="w-hum">--</div><div class="tile-label">ความชื้น (%)</div><div class="tile-tap">แตะดู ›</div></div>
       <div class="tile" id="tile-wind"><div class="tile-emoji"><i class="ti ti-wind" style="color:#4f87ff"></i></div><div class="tile-val" id="w-wind">--</div><div class="tile-label">ลม (m/s)</div><div class="tile-tap">แตะดู ›</div></div>
     </div>
-    <div class="chart-card" style="margin-bottom:10px">
-      <div class="chart-title"><i class="ti ti-trending-up"></i> อุณหภูมิ & ความชื้น (ประวัติ)</div>
-      <div style="height:160px"><canvas id="weather-inline-chart"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">🗂 ตารางประวัติอากาศ</div>
-      <div class="mtable-wrap" style="max-height:280px;overflow-y:auto">
-        <table class="mtable">
-          <thead><tr><th>เวลา</th><th><i class="ti ti-thermometer"></i>°C</th><th><i class="ti ti-droplet"></i>%</th><th><i class="ti ti-wind"></i>m/s</th><th><i class="ti ti-cloud"></i>%</th><th>สภาพ</th></tr></thead>
-          <tbody id="w-inline-tbody"><tr><td colspan="6" style="text-align:center;padding:18px;color:var(--sub)">รอข้อมูล...</td></tr></tbody>
-        </table>
+    <!-- Row 2: Wind compass (left) + PM2.5 vs weather (right) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px">
+
+      <!-- Wind compass -->
+      <div class="chart-card">
+        <div class="chart-title" style="margin-bottom:8px"><i class="ti ti-wind"></i> ทิศทางลม</div>
+        <div style="text-align:center">
+          <svg viewBox="0 0 100 100" style="width:88px;height:88px;display:block;margin:0 auto;overflow:visible">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(128,128,128,.18)" stroke-width="1.5"/>
+            <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(128,128,128,.09)" stroke-width="1" stroke-dasharray="3,4"/>
+            <line x1="50" y1="7" x2="50" y2="16" stroke="var(--sub)" stroke-width="2" stroke-linecap="round"/>
+            <line x1="50" y1="84" x2="50" y2="93" stroke="var(--sub)" stroke-width="2" stroke-linecap="round"/>
+            <line x1="7" y1="50" x2="16" y2="50" stroke="var(--sub)" stroke-width="2" stroke-linecap="round"/>
+            <line x1="84" y1="50" x2="93" y2="50" stroke="var(--sub)" stroke-width="2" stroke-linecap="round"/>
+            <text x="50" y="5.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="#dc2626" font-family="'Prompt',sans-serif">N</text>
+            <text x="50" y="99.5" text-anchor="middle" font-size="7" fill="var(--sub)" font-family="'Prompt',sans-serif">S</text>
+            <text x="2" y="53.5" text-anchor="middle" font-size="7" fill="var(--sub)" font-family="'Prompt',sans-serif">W</text>
+            <text x="98" y="53.5" text-anchor="middle" font-size="7" fill="var(--sub)" font-family="'Prompt',sans-serif">E</text>
+            <g id="compass-needle-g" style="transform-origin:50px 50px;transition:transform .9s cubic-bezier(.34,1.56,.64,1)">
+              <polygon points="50,13 47,50 50,42 53,50" fill="#dc2626" opacity="0.92"/>
+              <polygon points="50,87 47,50 50,58 53,50" fill="var(--sub)" opacity="0.5"/>
+              <circle cx="50" cy="50" r="5" fill="var(--text)"/>
+              <circle cx="50" cy="50" r="2.2" fill="#fff" opacity="0.9"/>
+            </g>
+          </svg>
+          <div id="wind-ms-display" style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:600;color:var(--text);margin-top:7px">-- m/s</div>
+          <div id="wind-beaufort" style="font-size:.62rem;color:var(--sub);margin-top:2px">--</div>
+          <div id="wind-dir-label" style="font-size:.6rem;color:var(--sub);margin-top:2px">--</div>
+        </div>
       </div>
+
+      <!-- PM2.5 vs Weather context -->
+      <div class="chart-card">
+        <div class="chart-title" style="margin-bottom:8px"><i class="ti ti-air-conditioning-disabled"></i> อากาศ vs ฝุ่น</div>
+        <div id="pm-weather-rows" style="display:flex;flex-direction:column;gap:7px">
+          <div style="text-align:center;color:var(--sub);font-size:.7rem;padding:20px 0">รอข้อมูล...</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Today's temperature: max/min + +3h/+6h forecast -->
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-title"><i class="ti ti-thermometer-plus"></i> อุณหภูมิวันนี้ & พยากรณ์</div>
+      <div id="temp-summary-content">
+        <div style="text-align:center;color:var(--sub);font-size:.7rem;padding:10px 0">รอข้อมูล...</div>
+      </div>
+    </div>
+
+    <!-- Weather trend chart (repurposed, keep canvas ID) -->
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-title"><i class="ti ti-chart-line"></i> แนวโน้มอุณหภูมิ & ความชื้นวันนี้</div>
+      <div style="height:130px"><canvas id="weather-inline-chart"></canvas></div>
     </div>
   </section>
 
@@ -989,7 +1097,8 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     btn.classList.add('active');
     document.getElementById('tab-' + tab).classList.add('active');
     window.scrollTo({top: 0, behavior: 'smooth'});
-    if(tab === 'weather') renderWeatherInline();
+    if(tab === 'weather'){ renderWeatherInline(); updateWeatherCards(); }
+    if(tab === 'stats') setTimeout(() => { [trendChart, _predHistChart, _hourChart, _weekChart].forEach(ch => { try{ ch?.resize(); }catch{} }); }, 60);
   });
 });
 
@@ -1298,6 +1407,7 @@ function renderActiveDevice(){
   updateInsightText(pmNow, records);
   buildHourChart(records);
   buildWeeklyTrend(records);
+  buildDotTimeline(records);
 }
 
 /* ── Device tab switching ── */
@@ -1405,6 +1515,7 @@ async function loadWeather(){
     const j = await r.json();
     const snap = {
       time: new Date().toLocaleString('th-TH', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'short'}),
+      ts: Date.now(),
       temp:j.main.temp, feels:j.main.feels_like, humidity:j.main.humidity,
       pressure:j.main.pressure, wind:j.wind.speed, windDir:j.wind.deg||0,
       rain:j.rain?.['1h']||0, clouds:j.clouds?.all||0, desc:j.weather?.[0]?.description||''
@@ -1418,6 +1529,8 @@ async function loadWeather(){
     document.getElementById('w-wind').textContent = snap.wind.toFixed(1);
     updateWeatherInlineTable();
     updateForecast();
+    updateWeatherCards();
+    loadWeatherForecast();
   } catch {
     ['w-temp','w-hum','w-wind'].forEach(id => { document.getElementById(id).textContent = 'N/A'; });
   }
@@ -1775,7 +1888,149 @@ function updateTwinCompare(){
   });
 }
 
-/* (new features wired into existing functions below) */
+/* ── Weather cards: Beaufort + compass + context ── */
+let _weatherForecast = [];
+
+function _beaufort(spd){
+  if(spd < 0.5)  return {b:0,  th:'สงบ'};
+  if(spd < 1.6)  return {b:1,  th:'ลมเบามาก'};
+  if(spd < 3.4)  return {b:2,  th:'ลมเบา'};
+  if(spd < 5.5)  return {b:3,  th:'ลมเบาปานกลาง'};
+  if(spd < 8.0)  return {b:4,  th:'ลมปานกลาง'};
+  if(spd < 10.8) return {b:5,  th:'ลมค่อนข้างแรง'};
+  if(spd < 13.9) return {b:6,  th:'ลมแรง'};
+  return           {b:7,  th:'ลมแรงมาก'};
+}
+function _windDirTh(deg){
+  const d = ['เหนือ','ตอ.เฉียงเหนือ','ตะวันออก','ตอ.เฉียงใต้','ใต้','ตต.เฉียงใต้','ตะวันตก','ตต.เฉียงเหนือ'];
+  return d[Math.round((deg % 360) / 45) % 8];
+}
+
+function updateWeatherCards(){
+  if(!_latestWeather) return;
+  const w = _latestWeather;
+
+  /* Compass needle */
+  const needle = document.getElementById('compass-needle-g');
+  if(needle) needle.style.transform = `rotate(${w.windDir}deg)`;
+  const bf = _beaufort(w.wind);
+  const msEl = document.getElementById('wind-ms-display');
+  if(msEl) msEl.textContent = `${w.wind.toFixed(1)} m/s`;
+  const bfEl = document.getElementById('wind-beaufort');
+  if(bfEl) bfEl.textContent = `Beaufort ${bf.b} · ${bf.th}`;
+  const dirEl = document.getElementById('wind-dir-label');
+  if(dirEl) dirEl.textContent = `ทิศทาง: จาก${_windDirTh(w.windDir)}`;
+
+  /* PM2.5 vs weather context */
+  const pmNow = (() => {
+    const recs = _devAll[_activeDevice]; if(!recs.length) return null;
+    return parseFloat(recs[recs.length-1]?.pm2_5) || null;
+  })();
+  const windCtx = w.wind >= 5  ? {ico:'💨', txt:'ลมช่วยกระจายฝุ่น',  col:'#16a34a'} :
+                  w.wind >= 2  ? {ico:'🌬️', txt:'ลมอ่อน ฝุ่นสะสมได้', col:'#d97706'} :
+                                 {ico:'😶‍🌫️', txt:'ลมสงบ ฝุ่นสะสมสูง', col:'#dc2626'};
+  const humCtx  = w.humidity >= 75 ? {ico:'💧', txt:'ชื้นสูง ฝุ่นจับตัว',     col:'#dc2626'} :
+                  w.humidity >= 55 ? {ico:'🌫️', txt:'ความชื้นปานกลาง',        col:'#d97706'} :
+                                     {ico:'🌤️', txt:'ความชื้นต่ำ ฝุ่นกระจาย', col:'#16a34a'};
+  const pmRow = pmNow !== null ? `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px;background:var(--raised);border-radius:11px;border:1px solid var(--border)">
+      <span style="font-size:1rem;flex-shrink:0">🌫️</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.55rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px">PM2.5 ตอนนี้</div>
+        <div style="font-size:.75rem;font-family:'DM Mono',monospace;font-weight:600;color:${getLevel(pmNow).color}">${pmNow.toFixed(1)} µg/m³ · ${getLevel(pmNow).label}</div>
+      </div>
+    </div>` : '';
+  const rows = document.getElementById('pm-weather-rows');
+  if(rows) rows.innerHTML = [windCtx, humCtx].map(ctx => `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px;background:var(--raised);border-radius:11px;border:1px solid var(--border)">
+      <span style="font-size:1rem;flex-shrink:0">${ctx.ico}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.55rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px">${ctx === windCtx ? `ลม ${w.wind.toFixed(1)} m/s` : `ความชื้น ${w.humidity}%`}</div>
+        <div style="font-size:.68rem;font-weight:600;color:${ctx.col}">${ctx.txt}</div>
+      </div>
+    </div>`).join('') + pmRow;
+
+  /* Today's temp max/min + forecast */
+  const today = new Date().toDateString();
+  const todayH = weatherHist.filter(h => h.ts && new Date(h.ts).toDateString() === today);
+  const useH   = todayH.length >= 2 ? todayH : weatherHist;
+  const temps  = useH.map(h => h.temp);
+  const maxT   = Math.max(...temps), minT = Math.min(...temps);
+  const fc1    = _weatherForecast[0], fc2 = _weatherForecast[1];
+  const fcCols = fc1 ? (fc2 ? '1fr 1fr 1fr 1fr' : '1fr 1fr 1fr') : '1fr 1fr';
+  const fcHtml1 = fc1 ? `<div style="text-align:center;background:var(--raised);border:1px solid var(--border);border-radius:12px;padding:10px 6px">
+    <div style="font-size:.55rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">+3 ชม.</div>
+    <div style="font-family:'DM Mono',monospace;font-size:1.15rem;font-weight:700;color:var(--text)">${fc1.temp.toFixed(1)}°</div>
+    <div style="font-size:.55rem;color:var(--sub);margin-top:2px">${fc1.desc}</div>
+  </div>` : '';
+  const fcHtml2 = fc2 ? `<div style="text-align:center;background:var(--raised);border:1px solid var(--border);border-radius:12px;padding:10px 6px">
+    <div style="font-size:.55rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">+6 ชม.</div>
+    <div style="font-family:'DM Mono',monospace;font-size:1.15rem;font-weight:700;color:var(--text)">${fc2.temp.toFixed(1)}°</div>
+    <div style="font-size:.55rem;color:var(--sub);margin-top:2px">${fc2.desc}</div>
+  </div>` : '';
+  const sumEl = document.getElementById('temp-summary-content');
+  if(sumEl) sumEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:${fcCols};gap:7px;margin-bottom:8px">
+      <div style="text-align:center;background:rgba(244,91,122,.1);border:1.5px solid rgba(244,91,122,.28);border-radius:12px;padding:10px 6px">
+        <div style="font-size:.55rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">🌡 สูงสุดวันนี้</div>
+        <div style="font-family:'DM Mono',monospace;font-size:1.25rem;font-weight:700;color:#f45b7a">${maxT.toFixed(1)}°</div>
+      </div>
+      <div style="text-align:center;background:rgba(79,135,255,.1);border:1.5px solid rgba(79,135,255,.28);border-radius:12px;padding:10px 6px">
+        <div style="font-size:.55rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">❄️ ต่ำสุดวันนี้</div>
+        <div style="font-family:'DM Mono',monospace;font-size:1.25rem;font-weight:700;color:#4f87ff">${minT.toFixed(1)}°</div>
+      </div>
+      ${fcHtml1}${fcHtml2}
+    </div>
+    <div style="font-size:.63rem;color:var(--sub);display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <span>ตอนนี้ <b style="color:var(--text)">${w.temp.toFixed(1)}°C</b></span>
+      <span>รู้สึกเหมือน <b style="color:var(--text)">${w.feels.toFixed(1)}°C</b></span>
+      ${w.desc ? `<span style="background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:2px 8px">${w.desc}</span>` : ''}
+    </div>`;
+}
+
+async function loadWeatherForecast(){
+  try{
+    const r = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${LAT}&lon=${LON}&appid=${OWM_KEY}&units=metric&cnt=3`);
+    const j = await r.json();
+    if(!j.list) return;
+    _weatherForecast = j.list.map(e => ({
+      temp:e.main.temp, feels:e.main.feels_like, humidity:e.main.humidity,
+      desc:e.weather?.[0]?.description||'', dt:e.dt_txt
+    }));
+    updateWeatherCards();
+  } catch { /* forecast is optional */ }
+}
+
+/* ── 6. AQI Dot Timeline ── */
+function buildDotTimeline(records){
+  const el = document.getElementById('dot-row');
+  if(!el) return;
+  const pts = records.slice(-48);
+  if(!pts.length){ el.innerHTML = '<span style="font-size:.65rem;color:var(--sub)">รอข้อมูล...</span>'; return; }
+  el.innerHTML = pts.map(r => {
+    const pm  = parseFloat(r.pm2_5) || 0;
+    const lv  = getLevel(pm);
+    const ts  = (r.datetime || '').split(' ')[1]?.slice(0,5) || '';
+    return `<div class="aq-dot" style="background:${lv.color}" title="${ts ? ts + ' น. · ' : ''}${pm.toFixed(1)} µg/m³ · ${lv.label}"></div>`;
+  }).join('');
+}
+
+/* ── 7. Accordion toggle ── */
+function toggleAcc(wrapId){
+  const wrap = document.getElementById(wrapId);
+  if(!wrap) return;
+  const opening = wrap.classList.contains('is-closed');
+  wrap.classList.toggle('is-open',   opening);
+  wrap.classList.toggle('is-closed', !opening);
+  if(opening){
+    setTimeout(() => {
+      [trendChart, _predHistChart, _hourChart, _weekChart].forEach(ch => { try{ ch?.resize(); }catch{} });
+    }, 50);
+  }
+}
+window.toggleAcc = toggleAcc;
+
+/* (new features wired into existing functions above) */
 </script>
 </body>
 </html>
