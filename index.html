@@ -593,13 +593,18 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
         <!-- AI Prediction card -->
         <div class="predict-card fade" id="predict-card" style="animation-delay:.18s">
           <div class="predict-header">
-            <div class="predict-icon"><i class="ti ti-cpu"></i></div>
+            <div class="predict-icon">🤖</div>
             <div class="predict-title">AI ทำนาย (อีก 10 นาที)</div>
             <div class="predict-badge" id="pred-aqi-badge">--</div>
           </div>
           <div id="pred-body">
-            <div class="pred-nodata">รอข้อมูลจาก AI... <br><span style="font-size:.68rem">กรุณารัน ai.py</span></div>
+            <div class="pred-nodata" style="padding:16px 8px;text-align:center">
+              <div style="font-size:1.8rem;margin-bottom:8px">🔄</div>
+              <div style="font-size:.82rem;font-weight:600;color:var(--sub)">รอข้อมูลจาก AI Model</div>
+              <div style="font-size:.68rem;color:var(--sub);margin-top:4px;line-height:1.5">ระบบจะแสดงค่าทำนายอัตโนมัติ<br>เมื่อ AI Model ทำงาน</div>
+            </div>
           </div>
+          <!-- OLS forecast insight (client-side) -->
           <div class="insight-banner" id="insight-banner"></div>
         </div>
       </div>
@@ -1328,47 +1333,56 @@ function renderPredictionCard(d){
   const hz = d.predict_horizon_s ? `อีก ${d.predict_horizon_s/60|0} นาที` : 'ทำนายล่วงหน้า';
   document.querySelector('.predict-title').innerHTML = `<i class="ti ti-cpu"></i> AI ทำนาย (${hz})`;
 
-  const conf = Math.min(Math.max(d.confidence || 0, 0), 100);
-  const devColors = ['#4f87ff','#db2777','#d97706'];
-  const devKeys   = Object.keys(d.per_device || {});
+  const conf   = Math.min(Math.max(d.confidence || 0, 0), 100);
+  const confLabel = conf >= 90 ? 'น่าเชื่อถือมาก' : conf >= 75 ? 'น่าเชื่อถือ' : conf >= 55 ? 'ปานกลาง' : 'ความแม่นยำต่ำ';
+  const confColor = conf >= 90 ? '#16a34a' : conf >= 75 ? '#65a30d' : conf >= 55 ? '#d97706' : '#dc2626';
+  const confIcon  = conf >= 90 ? '✅' : conf >= 75 ? '👍' : conf >= 55 ? '⚠️' : '❓';
 
-  let devRowsHtml = '';
-  devKeys.forEach((dev, i) => {
-    const p = d.per_device[dev];
-    const c = devColors[i % devColors.length];
-    devRowsHtml += `<div class="pred-dev-row">
-      <div class="pred-dev-dot" style="background:${c}"></div>
-      <div class="pred-dev-name" style="color:${c}">${dev}</div>
-      <div class="pred-dev-vals">PM2.5: ${p.pm2_5} · PM10: ${p.pm10}</div>
-      <div class="pred-dev-r2">R²: ${(p.r2*100).toFixed(0)}%</div>
-    </div>`;
-  });
+  /* Delta vs current sensor value */
+  const activeRecs = _devAll[_activeDevice];
+  const curPm  = activeRecs.length ? parseFloat(activeRecs[activeRecs.length-1]?.pm2_5)||0 : null;
+  const predPm = parseFloat(d.pm2_5)||0;
+  const delta  = curPm !== null ? predPm - curPm : null;
+  const lv     = getLevel(predPm);
+
+  let deltaHtml = '';
+  if(delta !== null){
+    const absDelta = Math.abs(delta).toFixed(1);
+    if(delta > 2)       deltaHtml = `<div style="font-size:.72rem;font-weight:700;color:#dc2626;margin-top:5px">↑ สูงขึ้น ${absDelta} µg/m³ จากตอนนี้</div>`;
+    else if(delta < -2) deltaHtml = `<div style="font-size:.72rem;font-weight:700;color:#16a34a;margin-top:5px">↓ ลดลง ${absDelta} µg/m³ จากตอนนี้</div>`;
+    else                deltaHtml = `<div style="font-size:.72rem;color:var(--sub);margin-top:5px">→ ใกล้เคียงกับตอนนี้</div>`;
+  }
 
   document.getElementById('pred-body').innerHTML = `
-    <div class="pred-vals">
-      <div class="pred-val-item">
-        <div class="pred-val-num" style="color:#4f87ff">${d.pm2_5}</div>
-        <div class="pred-val-label">PM2.5<br><span style="font-size:.55rem">µg/m³</span></div>
+    <!-- Primary: predicted PM2.5 -->
+    <div style="background:${lv.color}18;border:1.5px solid ${lv.color}45;border-radius:18px;padding:16px 14px 12px;text-align:center;margin-bottom:10px">
+      <div style="font-size:.62rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">PM2.5 ที่คาดว่าจะเป็น</div>
+      <div style="font-family:'DM Mono',monospace;font-size:3rem;font-weight:700;color:${lv.color};line-height:1;text-shadow:0 0 20px ${lv.color}55">${d.pm2_5}</div>
+      <div style="font-size:.68rem;color:var(--sub);margin-top:3px">µg/m³</div>
+      ${deltaHtml}
+      <div style="margin-top:8px"><span style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:99px;background:${lv.color}25;color:${lv.color};font-size:.72rem;font-weight:700;border:1.5px solid ${lv.color}50">${lv.label}</span></div>
+    </div>
+
+    <!-- Secondary metrics row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:8px">
+      <div style="background:var(--raised);border-radius:12px;padding:10px 6px;text-align:center;border:1px solid var(--border)">
+        <div style="font-size:.57rem;font-weight:700;color:var(--sub);margin-bottom:3px">ฝุ่นขนาดเล็ก<br>(PM10)</div>
+        <div style="font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:600;color:var(--teal)">${d.pm10}</div>
+        <div style="font-size:.52rem;color:var(--sub)">µg/m³</div>
       </div>
-      <div class="pred-val-item">
-        <div class="pred-val-num" style="color:#0dbcb9">${d.pm10}</div>
-        <div class="pred-val-label">PM10<br><span style="font-size:.55rem">µg/m³</span></div>
+      <div style="background:var(--raised);border-radius:12px;padding:10px 6px;text-align:center;border:1px solid var(--border)">
+        <div style="font-size:.57rem;font-weight:700;color:var(--sub);margin-bottom:3px">ฝุ่นละเอียด<br>(PM1.0)</div>
+        <div style="font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:600;color:#67e8f9">${d.pm1}</div>
+        <div style="font-size:.52rem;color:var(--sub)">µg/m³</div>
       </div>
-      <div class="pred-val-item">
-        <div class="pred-val-num" style="color:#67e8f9">${d.pm1}</div>
-        <div class="pred-val-label">PM1.0<br><span style="font-size:.55rem">µg/m³</span></div>
+      <div style="background:${confColor}12;border-radius:12px;padding:10px 6px;text-align:center;border:1.5px solid ${confColor}35">
+        <div style="font-size:.57rem;font-weight:700;color:var(--sub);margin-bottom:3px">ความน่า<br>เชื่อถือ</div>
+        <div style="font-size:1.1rem;line-height:1;margin-bottom:2px">${confIcon}</div>
+        <div style="font-size:.6rem;font-weight:700;color:${confColor}">${confLabel}</div>
       </div>
     </div>
-    <div class="conf-row">
-      <div class="conf-label">ความแม่นยำ (R²)</div>
-      <div class="conf-bar-bg"><div class="conf-bar" id="conf-bar" style="width:${conf}%"></div></div>
-      <div class="conf-pct">${conf.toFixed(0)}%</div>
-    </div>
-    ${devKeys.length > 0 ? `<div class="pred-devices">${devRowsHtml}</div>` : ''}
-    <div class="pred-footer">
-      <span>อัปเดต: ${d.updated_str || '--'}</span>
-      <span class="pred-mae">MAE: ${d.mae || '--'} µg/m³</span>
-    </div>`;
+
+    <div style="font-size:.62rem;color:var(--sub);text-align:right">อัปเดต: ${d.updated_str || '--'}</div>`;
 }
 
 /* ── Firebase: prediction history chart ── */
