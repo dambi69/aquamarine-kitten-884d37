@@ -6,49 +6,59 @@
 <title>SmartAir · KMUTT</title>
 <meta name="description" content="ระบบติดตามคุณภาพอากาศ PM2.5 แบบ real-time มจธ. บางมด">
 <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f0f5ff">
+<meta name="theme-color" content="#f6fbf9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartAir">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
 <style>
 :root {
+  /* AQI levels */
   --good:#16a34a; --good-bg:rgba(22,163,74,.12); --good-ring:rgba(22,163,74,.45);
   --mod:#d97706;  --mod-bg:rgba(217,119,6,.12);  --mod-ring:rgba(217,119,6,.45);
   --bad:#dc2626;  --bad-bg:rgba(220,38,38,.12);  --bad-ring:rgba(220,38,38,.45);
 
-  --glass:rgba(255,255,255,0.62);
-  --glass-strong:rgba(255,255,255,0.82);
-  --glass-border:rgba(255,255,255,0.72);
-  --glass-shadow:0 8px 32px rgba(31,38,135,.1);
+  /* Mint × Sky × Lavender palette */
+  --mint:#2a9d6e;  --mint-dark:#1d7a54; --mint-light:#e6f7f1;
+  --sky:#38bdf8;   --sky-light:#e0f5ff;
+  --lav:#a78bfa;   --lav-light:#ede9fe;
+
+  /* Glass */
+  --glass:rgba(255,255,255,0.68);
+  --glass-strong:rgba(255,255,255,0.88);
+  --glass-border:rgba(42,157,110,0.18);
+  --glass-shadow:0 8px 32px rgba(42,157,110,0.10);
   --glass-blur:blur(22px);
 
-  --text:#1e293b;
-  --sub:#64748b;
-  --border:rgba(255,255,255,0.6);
-  --raised:rgba(255,255,255,0.35);
-  --nav-bg:rgba(255,255,255,0.72);
-  --white:rgba(255,255,255,0.65);
+  /* Typography */
+  --text:#0f2d1e;
+  --sub:#4a7c63;
+  --border:rgba(42,157,110,0.15);
+  --raised:rgba(255,255,255,0.45);
+  --nav-bg:rgba(255,255,255,0.82);
+  --white:rgba(255,255,255,0.70);
 
-  --blue:#4f87ff; --teal:#0dbcb9; --rose:#f45b7a;
-  --amber:#f59e0b; --violet:#8b5cf6; --green:#22c55e;
+  /* Accent colors */
+  --blue:#38bdf8; --teal:#0dbcb9; --rose:#f45b7a;
+  --amber:#f59e0b; --violet:#a78bfa; --green:#2a9d6e;
 
   --r:24px; --r-sm:16px;
   --shadow:var(--glass-shadow);
-  --shadow-md:0 16px 48px rgba(31,38,135,.18);
+  --shadow-md:0 16px 48px rgba(42,157,110,0.18);
 
   --current-c:var(--good);
   --current-bg:var(--good-bg);
   --current-ring:var(--good-ring);
 
   --nav-h:68px;
+  --header-h:auto;
 }
 
 [data-theme="dark"] {
@@ -73,20 +83,20 @@
 
 html {
   min-height:100%;
-  background: radial-gradient(ellipse 70% 55% at 15% -5%, #bfdbfe 0%, transparent 55%),
-              radial-gradient(ellipse 55% 45% at 88% 12%, #a7f3d0 0%, transparent 55%),
-              radial-gradient(ellipse 45% 55% at 55% 95%, #ddd6fe 0%, transparent 55%),
-              linear-gradient(160deg, #f0f5ff 0%, #eef9f6 50%, #f5f0ff 100%);
+  background: radial-gradient(ellipse 60% 45% at 10% -5%, rgba(56,189,248,.18) 0%, transparent 55%),
+              radial-gradient(ellipse 55% 50% at 90% 10%, rgba(42,157,110,.18) 0%, transparent 55%),
+              radial-gradient(ellipse 50% 45% at 50% 100%, rgba(167,139,250,.14) 0%, transparent 55%),
+              linear-gradient(160deg, #f6fbf9 0%, #f0faf6 50%, #f5f0ff 100%);
   background-attachment: fixed;
 }
 [data-theme="dark"] {
-  background: radial-gradient(ellipse 70% 55% at 15% -5%, rgba(30,64,175,.45) 0%, transparent 55%),
-              radial-gradient(ellipse 55% 45% at 88% 12%, rgba(6,78,59,.3) 0%, transparent 55%),
-              radial-gradient(ellipse 45% 55% at 55% 95%, rgba(76,29,149,.25) 0%, transparent 55%),
-              linear-gradient(160deg, #060a18 0%, #080e1a 50%, #060812 100%);
+  background: radial-gradient(ellipse 60% 45% at 10% -5%, rgba(29,122,84,.35) 0%, transparent 55%),
+              radial-gradient(ellipse 55% 50% at 90% 10%, rgba(6,78,59,.28) 0%, transparent 55%),
+              radial-gradient(ellipse 50% 45% at 50% 100%, rgba(76,29,149,.22) 0%, transparent 55%),
+              linear-gradient(160deg, #061210 0%, #07180f 50%, #060812 100%);
 }
 
-body { font-family:'Prompt',sans-serif; background:transparent; color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; transition:color .3s; }
+body { font-family:'Nunito','Sarabun',sans-serif; background:transparent; color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; transition:color .3s; }
 
 .page { max-width:720px; margin:0 auto; padding:16px 14px; padding-bottom:calc(var(--nav-h) + 20px); }
 .tab-section { display:none; }
@@ -102,16 +112,54 @@ body { font-family:'Prompt',sans-serif; background:transparent; color:var(--text
 .error-retry { background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.4); color:#fff; border-radius:8px; padding:4px 12px; font-size:.75rem; font-weight:700; cursor:pointer; font-family:'Prompt',sans-serif; }
 
 /* ── Header ── */
-.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.header {
+  background: linear-gradient(135deg, var(--mint) 0%, var(--mint-dark) 100%);
+  border-radius:24px;
+  padding:14px 16px 10px;
+  margin-bottom:14px;
+  box-shadow:0 8px 32px rgba(42,157,110,.28);
+  position:relative;
+  overflow:hidden;
+}
+.header::before {
+  content:'';
+  position:absolute;
+  top:-40px; right:-40px;
+  width:140px; height:140px;
+  border-radius:50%;
+  background:rgba(255,255,255,.08);
+  pointer-events:none;
+}
+.header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
 .logo { display:flex; align-items:center; gap:10px; }
-.logo-icon { width:44px; height:44px; border-radius:14px; background:linear-gradient(135deg,#4ade80,#06b6d4); display:flex; align-items:center; justify-content:center; font-size:1.5rem; box-shadow:0 4px 16px rgba(74,222,128,.35); }
-.logo-text { font-size:1.05rem; font-weight:700; }
-.logo-place { font-size:.68rem; color:var(--sub); font-weight:400; }
-.header-right { display:flex; align-items:center; gap:8px; }
-.live-tag { display:flex; align-items:center; gap:6px; font-size:.72rem; font-weight:600; color:var(--good); background:var(--good-bg); padding:5px 12px; border-radius:99px; border:1px solid var(--good-ring); }
-.dot { width:7px; height:7px; border-radius:50%; background:var(--good); animation:blink 2s infinite; }
-.dm-btn { width:38px; height:38px; border-radius:12px; background:var(--glass); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1rem; transition:transform .2s; flex-shrink:0; box-shadow:var(--glass-shadow); }
-.dm-btn:hover { transform:rotate(18deg); }
+.logo-icon { width:40px; height:40px; border-radius:13px; background:rgba(255,255,255,.22); display:flex; align-items:center; justify-content:center; font-size:1.4rem; border:1.5px solid rgba(255,255,255,.3); }
+.logo-text { font-size:1rem; font-weight:800; color:#fff; letter-spacing:-.3px; }
+.logo-place { font-size:.63rem; color:rgba(255,255,255,.75); font-weight:500; }
+.header-right { display:flex; align-items:center; gap:7px; }
+.live-tag { display:flex; align-items:center; gap:5px; font-size:.68rem; font-weight:700; color:#fff; background:rgba(255,255,255,.18); padding:4px 10px; border-radius:99px; border:1px solid rgba(255,255,255,.25); }
+.dot { width:6px; height:6px; border-radius:50%; background:#a7f3d0; animation:blink 2s infinite; }
+.dm-btn { width:34px; height:34px; border-radius:11px; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.25); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:.95rem; color:#fff; transition:transform .2s,background .2s; flex-shrink:0; }
+.dm-btn:hover { transform:rotate(18deg); background:rgba(255,255,255,.28); }
+
+/* Header sensor tabs */
+.header-tabs { display:flex; gap:7px; }
+.htab {
+  flex:1; padding:9px 8px 8px; border-radius:14px;
+  background:rgba(255,255,255,.14);
+  border:1.5px solid rgba(255,255,255,.2);
+  cursor:pointer; text-align:center;
+  transition:background .2s, border-color .2s, transform .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.htab.htab-active {
+  background:rgba(255,255,255,.28);
+  border-color:rgba(255,255,255,.55);
+  box-shadow:0 2px 12px rgba(0,0,0,.12);
+}
+.htab:active { transform:scale(.96); }
+.htab-name { font-size:.58rem; font-weight:700; color:rgba(255,255,255,.75); text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px; }
+.htab-pm { font-family:'DM Mono',monospace; font-size:1.25rem; font-weight:700; color:#fff; line-height:1; }
+.htab-badge { display:inline-block; font-size:.5rem; font-weight:700; padding:1px 6px; border-radius:99px; background:rgba(255,255,255,.22); color:#fff; margin-top:3px; border:1px solid rgba(255,255,255,.2); }
 
 /* ── Device tabs (hidden — JS still uses these) ── */
 .device-tabs { display:none; }
@@ -148,7 +196,7 @@ body { font-family:'Prompt',sans-serif; background:transparent; color:var(--text
 .leg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 
 /* ── AI Prediction card ── */
-.predict-card { background:var(--glass); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1.5px solid rgba(79,135,255,.35); border-radius:20px; padding:16px 16px 14px; margin-bottom:12px; box-shadow:var(--glass-shadow); }
+.predict-card { background:var(--glass); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1.5px solid var(--glass-border); border-radius:20px; padding:16px 16px 14px; margin-bottom:12px; box-shadow:var(--glass-shadow); transition:border-color .6s, box-shadow .6s; }
 .predict-header { display:flex; align-items:center; gap:8px; margin-bottom:11px; }
 .predict-icon { font-size:1.1rem; }
 .predict-title { font-size:.8rem; font-weight:700; color:var(--blue); flex:1; }
@@ -352,10 +400,11 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 .arc-track { stroke:rgba(0,0,0,.08); }
 [data-theme="dark"] .arc-track { stroke:rgba(255,255,255,.08); }
 .arc-fill {
+  stroke: var(--current-c);
   stroke-dasharray: 302;
   stroke-dashoffset: 302;
-  transition: stroke-dashoffset .9s cubic-bezier(.34,1.56,.64,1);
-  filter: drop-shadow(0 0 6px var(--current-ring));
+  transition: stroke-dashoffset .9s cubic-bezier(.34,1.56,.64,1), stroke .6s;
+  filter: drop-shadow(0 0 8px var(--current-ring));
 }
 .arc-needle { fill:var(--current-c); transition:cx .9s cubic-bezier(.34,1.56,.64,1), cy .9s cubic-bezier(.34,1.56,.64,1); filter:drop-shadow(0 0 5px var(--current-ring)); }
 .arc-num-overlay { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; }
@@ -468,16 +517,35 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 <div class="page">
 
   <div class="header fade" style="animation-delay:.04s">
-    <div class="logo">
-      <div class="logo-icon">🌿</div>
-      <div>
-        <div class="logo-text">SmartAir</div>
-        <div class="logo-place">มจธ. บางมด · กรุงเทพฯ</div>
+    <div class="header-top">
+      <div class="logo">
+        <div class="logo-icon">🌿</div>
+        <div>
+          <div class="logo-text">SmartAir</div>
+          <div class="logo-place">มจธ. บางมด · กรุงเทพฯ</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="live-tag"><div class="dot"></div>ข้อมูลสด</div>
+        <button class="dm-btn" id="dm-toggle" title="สลับ Dark / Light"><i class="ti ti-moon" id="dm-icon"></i></button>
       </div>
     </div>
-    <div class="header-right">
-      <div class="live-tag"><div class="dot"></div>ข้อมูลสด</div>
-      <button class="dm-btn" id="dm-toggle" title="สลับ Dark / Light"><i class="ti ti-moon" id="dm-icon"></i></button>
+    <div class="header-tabs">
+      <div class="htab htab-active" id="htab-device1" onclick="switchDevice('device1')">
+        <div class="htab-name">S12 · D1</div>
+        <div class="htab-pm" id="htab-pm-device1">--</div>
+        <div class="htab-badge" id="htab-badge-device1">--</div>
+      </div>
+      <div class="htab" id="htab-device2" onclick="switchDevice('device2')">
+        <div class="htab-name">SCL · D2</div>
+        <div class="htab-pm" id="htab-pm-device2">--</div>
+        <div class="htab-badge" id="htab-badge-device2">--</div>
+      </div>
+      <div class="htab" id="htab-device3" onclick="switchDevice('device3')">
+        <div class="htab-name">S14 · D3</div>
+        <div class="htab-pm" id="htab-pm-device3">--</div>
+        <div class="htab-badge" id="htab-badge-device3">--</div>
+      </div>
     </div>
   </div>
 
@@ -565,11 +633,12 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
             <svg class="arc-svg" viewBox="0 0 220 130">
               <defs>
                 <linearGradient id="aqiGrad" x1="14" y1="0" x2="206" y2="0" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%"   stop-color="#22c55e"/>
-                  <stop offset="28%"  stop-color="#eab308"/>
-                  <stop offset="55%"  stop-color="#f97316"/>
-                  <stop offset="80%"  stop-color="#ef4444"/>
-                  <stop offset="100%" stop-color="#9f1239"/>
+                  <stop offset="0%"    stop-color="#22c55e"/>
+                  <stop offset="6.7%"  stop-color="#22c55e"/>
+                  <stop offset="14.3%" stop-color="#eab308"/>
+                  <stop offset="25%"   stop-color="#f97316"/>
+                  <stop offset="65.5%" stop-color="#ef4444"/>
+                  <stop offset="100%"  stop-color="#9f1239"/>
                 </linearGradient>
                 <filter id="ndlGlow" x="-50%" y="-50%" width="200%" height="200%">
                   <feGaussianBlur stdDeviation="3" result="blur"/>
@@ -577,8 +646,13 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
                 </filter>
               </defs>
               <path class="arc-track" d="M 14 120 A 96 96 0 0 1 206 120" stroke-width="14" fill="none" stroke-linecap="round"/>
-              <path d="M 14 120 A 96 96 0 0 1 206 120" stroke="url(#aqiGrad)" stroke-width="14" fill="none" stroke-linecap="round" opacity="0.18"/>
-              <path class="arc-fill" id="arc-fill" d="M 14 120 A 96 96 0 0 1 206 120" stroke="url(#aqiGrad)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="302" stroke-dashoffset="302"/>
+              <path d="M 14 120 A 96 96 0 0 1 206 120" stroke="url(#aqiGrad)" stroke-width="14" fill="none" stroke-linecap="round" opacity="0.25"/>
+              <path class="arc-fill" id="arc-fill" d="M 14 120 A 96 96 0 0 1 206 120" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="302" stroke-dashoffset="302"/>
+              <!-- AQI zone tick marks at PM 25, 37, 50, 90 -->
+              <circle cx="27" cy="72" r="3.5" fill="rgba(255,255,255,0.85)" opacity="0.9"/>
+              <circle cx="43" cy="52" r="3.5" fill="rgba(255,255,255,0.85)" opacity="0.9"/>
+              <circle cx="62" cy="37" r="3.5" fill="rgba(255,255,255,0.85)" opacity="0.9"/>
+              <circle cx="140" cy="29" r="3.5" fill="rgba(255,255,255,0.85)" opacity="0.9"/>
               <circle class="arc-needle" id="arc-needle" cx="14" cy="120" r="9" filter="url(#ndlGlow)"/>
             </svg>
             <div class="arc-num-overlay">
@@ -586,7 +660,13 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
               <div class="pm-meta"><div class="pm-name">PM2.5</div><div class="pm-unit">µg/m³</div></div>
             </div>
           </div>
-          <div class="arc-gauge-label-row"><span>0</span><span>75</span><span>150+</span></div>
+          <div class="arc-gauge-label-row">
+            <span style="color:#22c55e;font-weight:700">0</span>
+            <span style="color:#eab308;font-weight:600">25</span>
+            <span style="color:#f97316;font-weight:600">50</span>
+            <span style="color:#ef4444;font-weight:600">90</span>
+            <span style="color:#9f1239;font-weight:700">150+</span>
+          </div>
           <div style="text-align:center"><span class="aqi-badge" id="hero-aqi-badge"><i class="ti ti-leaf"></i> กำลังโหลด...</span></div>
           <div class="updated" style="margin-top:8px">อัปเดตล่าสุด: <span id="last-time">--</span></div>
         </div>
@@ -1193,6 +1273,11 @@ function updateSensorCard(device, records){
   if(badge){ badge.textContent = lv.label; badge.style.background = lv.color+'22'; badge.style.color = lv.color; badge.style.borderColor = lv.color+'55'; }
   const timeEl = document.getElementById('sc-time-'+device);
   if(timeEl) timeEl.textContent = latest.datetime || '--';
+  /* sync header sensor tabs */
+  const htPm = document.getElementById('htab-pm-'+device);
+  if(htPm) htPm.textContent = pm.toFixed(1);
+  const htBadge = document.getElementById('htab-badge-'+device);
+  if(htBadge){ htBadge.textContent = lv.label; htBadge.style.background = lv.color+'55'; }
   /* sparkline */
   const canv = document.getElementById('spark-'+device);
   if(!canv) return;
@@ -1424,6 +1509,7 @@ function switchDevice(device){
   _activeDevice = device;
   document.querySelectorAll('.dev-tab').forEach(b => { b.classList.toggle('active', b.dataset.device===device); });
   document.querySelectorAll('.sensor-card').forEach(c => { c.classList.toggle('sc-active', c.dataset.device===device); });
+  document.querySelectorAll('.htab').forEach(h => { h.classList.toggle('htab-active', h.id==='htab-'+device); });
   renderActiveDevice();
   if(_latestPrediction) renderPredictionCard(_latestPrediction);
 }
@@ -1463,6 +1549,9 @@ function renderPredictionCard(d){
 
   /* AQI badge — recompute from active device PM2.5 */
   const lv    = getLevel(parseFloat(pm2_5)||0);
+  /* Update card border to match AQI level */
+  const card  = document.getElementById('predict-card');
+  if(card){ card.style.borderColor = lv.color+'55'; card.style.boxShadow = `0 0 0 1px ${lv.color}18, var(--glass-shadow)`; }
   const badge = document.getElementById('pred-aqi-badge');
   badge.textContent = lv.label || '--';
   badge.style.background   = lv.color ? lv.color + '22' : '';
@@ -1485,6 +1574,31 @@ function renderPredictionCard(d){
     else if(delta < -2) deltaHtml = `<div style="font-size:.72rem;font-weight:700;color:#16a34a;margin-top:5px">↓ ลดลง ${absDelta} µg/m³ จากตอนนี้</div>`;
     else                deltaHtml = `<div style="font-size:.72rem;color:var(--sub);margin-top:5px">→ ใกล้เคียงกับตอนนี้</div>`;
   }
+
+  /* Prediction range bar */
+  const uncertainty = conf < 55 ? 35 : conf < 75 ? 25 : 15;
+  const bandLow  = Math.max(0, predPm * (1 - uncertainty/100));
+  const bandHigh = Math.min(150, predPm * (1 + uncertainty/100));
+  const toPct = v => Math.min(100, Math.max(0, (v/150)*100)).toFixed(1);
+  const curPct  = curPm !== null ? toPct(curPm) : null;
+  const predPct = toPct(predPm);
+  const bL = toPct(curPm !== null ? Math.min(bandLow, curPm) : bandLow);
+  const bR = toPct(curPm !== null ? Math.max(bandHigh, curPm) : bandHigh);
+  const bW = Math.max(0, parseFloat(bR) - parseFloat(bL)).toFixed(1);
+  const rangeBarHtml = `
+    <div style="padding:10px 12px;background:var(--raised);border-radius:12px;border:1px solid var(--border);margin-bottom:8px">
+      <div style="font-size:.53rem;color:var(--sub);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">ช่วงคาดการณ์ (PM2.5)</div>
+      <div style="position:relative;height:20px;margin:0 6px">
+        <div style="position:absolute;top:50%;left:0;right:0;height:5px;background:var(--border);border-radius:99px;transform:translateY(-50%)"></div>
+        <div style="position:absolute;top:50%;left:${bL}%;width:${bW}%;min-width:6px;height:5px;background:${lv.color}40;border:1px solid ${lv.color}55;border-radius:99px;transform:translateY(-50%)"></div>
+        ${curPct !== null ? `<div style="position:absolute;top:50%;left:${curPct}%;transform:translate(-50%,-50%);width:11px;height:11px;border-radius:50%;background:#4f87ff;border:2px solid #fff;box-shadow:0 0 6px rgba(79,135,255,.55);z-index:1"></div>` : ''}
+        <div style="position:absolute;top:50%;left:${predPct}%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;background:${lv.color};border:2px solid #fff;box-shadow:0 0 8px ${lv.color}88;z-index:2"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.55rem;color:var(--sub);margin-top:6px">
+        ${curPct !== null ? `<span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4f87ff;vertical-align:middle;margin-right:3px"></span>ตอนนี้ ${parseFloat(curPm).toFixed(1)}</span>` : '<span></span>'}
+        <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${lv.color};vertical-align:middle;margin-right:3px"></span><span style="color:${lv.color};font-weight:700">ทำนาย ${predPm.toFixed(1)}</span></span>
+      </div>
+    </div>`;
 
   document.getElementById('pred-body').innerHTML = `
     <!-- Primary: predicted PM2.5 -->
@@ -1515,6 +1629,7 @@ function renderPredictionCard(d){
       </div>
     </div>
 
+    ${rangeBarHtml}
     <div style="font-size:.62rem;color:var(--sub);text-align:right">อัปเดต: ${d.updated_str || '--'}</div>`;
 }
 
