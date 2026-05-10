@@ -1449,6 +1449,17 @@ onValue(ref(fbDb, '/ai_analysis/prediction'), snap => {
   renderPredictionCard(d);
 });
 
+function _calcTrend(recs) {
+  if (!recs || recs.length < 2) return null;
+  const pts = recs
+    .map(r => ({ pm: parseFloat(r.pm2_5) || 0, t: new Date(r.datetime || 0).getTime() }))
+    .filter(r => r.t > 0)
+    .sort((a, b) => a.t - b.t);
+  if (pts.length < 2) return null;
+  const hrs = (pts[pts.length-1].t - pts[0].t) / 3600000;
+  return hrs < 0.01 ? null : (pts[pts.length-1].pm - pts[0].pm) / hrs;
+}
+
 function renderPredictionCard(d){
   if(!d) return;
 
@@ -1458,12 +1469,16 @@ function renderPredictionCard(d){
   const pm10  = dev?.pm10  ?? d.pm10;
   const pm1   = dev?.pm1   ?? d.pm1;
 
-  /* Confidence from per-device R², clamp to [0,100] */
+  /* Keep R² only for uncertainty band width */
   const devR2 = dev ? Math.max(dev.r2 ?? 0, 0) : Math.max((d.r2_score ?? 0), 0);
   const conf  = Math.min(devR2 * 100, 100);
-  const confLabel = conf >= 90 ? 'น่าเชื่อถือมาก' : conf >= 75 ? 'น่าเชื่อถือ' : conf >= 55 ? 'ปานกลาง' : 'ความแม่นยำต่ำ';
-  const confColor = conf >= 90 ? '#16a34a' : conf >= 75 ? '#65a30d' : conf >= 55 ? '#d97706' : '#dc2626';
-  const confIcon  = conf >= 90 ? '✅' : conf >= 75 ? '👍' : conf >= 55 ? '⚠️' : '❓';
+
+  /* Trend rate from recent sensor history */
+  const trendRate  = _calcTrend(_devAll[_activeDevice]);
+  const trendArrow = trendRate === null ? '→' : trendRate > 1 ? '↑' : trendRate < -1 ? '↓' : '→';
+  const trendColor = trendRate === null ? 'var(--sub)' : trendRate > 1 ? '#dc2626' : trendRate < -1 ? '#16a34a' : '#d97706';
+  const trendVal   = trendRate === null ? '--' : (trendRate >= 0 ? '+' : '') + trendRate.toFixed(1);
+  const trendDesc  = trendRate === null ? '' : trendRate > 1 ? 'กำลังเพิ่ม' : trendRate < -1 ? 'กำลังลด' : 'ค่อนข้างคงที่';
 
   /* AQI badge — recompute from active device PM2.5 */
   const lv    = getLevel(parseFloat(pm2_5)||0);
@@ -1540,10 +1555,11 @@ function renderPredictionCard(d){
         <div style="font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:600;color:#67e8f9">${pm1}</div>
         <div style="font-size:.52rem;color:var(--sub)">µg/m³</div>
       </div>
-      <div style="background:${confColor}12;border-radius:12px;padding:10px 6px;text-align:center;border:1.5px solid ${confColor}35">
-        <div style="font-size:.57rem;font-weight:700;color:var(--sub);margin-bottom:3px">ความน่า<br>เชื่อถือ</div>
-        <div style="font-size:1.1rem;line-height:1;margin-bottom:2px">${confIcon}</div>
-        <div style="font-size:.6rem;font-weight:700;color:${confColor}">${confLabel}</div>
+      <div style="background:${trendColor === 'var(--sub)' ? 'var(--raised)' : trendColor+'12'};border-radius:12px;padding:10px 6px;text-align:center;border:1.5px solid ${trendColor === 'var(--sub)' ? 'var(--border)' : trendColor+'35'}">
+        <div style="font-size:.57rem;font-weight:700;color:var(--sub);margin-bottom:3px">แนวโน้ม<br>ฝุ่น/ชม.</div>
+        <div style="font-size:1.25rem;line-height:1;margin-bottom:1px;color:${trendColor};font-weight:700">${trendArrow}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.65rem;font-weight:700;color:${trendColor}">${trendVal}</div>
+        <div style="font-size:.5rem;color:var(--sub);margin-top:1px">${trendDesc || 'µg/m³'}</div>
       </div>
     </div>
 
