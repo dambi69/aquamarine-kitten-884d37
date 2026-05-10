@@ -1082,6 +1082,9 @@ function setColors(lv){
   r.setProperty('--current-ring', lv.ring);
 }
 
+/* ── Chart handles (declared early so updateChartsTheme can safely reference them) ── */
+let trendChart, _predHistChart;
+
 /* ── Dark mode ── */
 function isDark(){ return document.documentElement.getAttribute('data-theme') === 'dark'; }
 function setDark(on){
@@ -1324,7 +1327,7 @@ function updateForecast(){
 /* ── Trend chart (history + forecast datasets) ── */
 const tCtx = document.getElementById('trend-chart').getContext('2d');
 const _histGrad=(()=>{const g=tCtx.createLinearGradient(0,0,0,130);g.addColorStop(0,'rgba(56,189,248,.2)');g.addColorStop(1,'rgba(56,189,248,0)');return g;})();
-const trendChart = new Chart(tCtx, {type:'line',
+trendChart = new Chart(tCtx, {type:'line',
   data:{labels:[], datasets:[
     {label:'PM2.5', data:[], borderColor:'#38bdf8', backgroundColor:_histGrad, borderWidth:2.5, pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:'#38bdf8', pointBorderWidth:2.5, tension:.4, fill:true, spanGaps:false},
     {label:'_upper', data:[], borderColor:'transparent', backgroundColor:'rgba(13,188,185,.13)', fill:'+1', pointRadius:0, borderWidth:0, tension:.4, spanGaps:false},
@@ -1343,7 +1346,7 @@ const trendChart = new Chart(tCtx, {type:'line',
 });
 
 /* ── Prediction history chart ── */
-let _predHistChart = null;
+_predHistChart = null;
 function buildPredHistChart(labels, data){
   const canvas = document.getElementById('predict-hist-chart');
   document.getElementById('pred-hist-loading').style.display = 'none';
