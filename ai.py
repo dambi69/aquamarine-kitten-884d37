@@ -1,9 +1,11 @@
 """
-AI DUST PREDICTOR v3
-- Per-device XGBoost models with R²-weighted average
-- Model persistence (load on restart, retrain on schedule)
-- Proper logging, retry logic, prediction horizon label
-- Graceful shutdown
+AI DUST PREDICTOR v4
+- XGBoost (primary) + Ridge regression (fallback for small datasets)
+- Per-device models with R^2-weighted ensemble
+- Column name normalization (handles various Firebase field naming)
+- Single Firebase fetch per cycle (efficient)
+- Adaptive retraining when model performance drops
+- Robust error recovery for continuous operation
 """
 
 import logging
@@ -21,19 +23,25 @@ import pandas as pd
 import joblib
 
 from xgboost import XGBRegressor
+from sklearn.linear_model import Ridge
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import mean_absolute_error, r2_score
 
 warnings.filterwarnings('ignore')
 
-# ── Logging ──────────────────────────────────────────────────────────────────
+# ── Logging ───────────────────────────────────────────────────────────────────
+_stream_handler = logging.StreamHandler(sys.stdout)
+_stream_handler.stream.reconfigure(encoding='utf-8', errors='replace') if hasattr(sys.stdout, 'reconfigure') else None
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
     datefmt='%H:%M:%S',
     handlers=[
-        logging.StreamHandler(sys.stdout),
+        _stream_handler,
         logging.FileHandler('ai_predictor.log', encoding='utf-8'),
     ],
 )
@@ -48,17 +56,35 @@ PREDICTION_PATH  = '/ai_analysis/prediction'
 HISTORY_PATH     = '/ai_analysis/forecast_history'
 MODEL_SAVE_PATH  = 'dust_model_{device}.pkl'
 
-FEATURE_COLS      = ['pm1', 'pm2_5', 'pm10', 'temperature', 'humidity']
-TARGET_COLS       = ['pm1', 'pm2_5', 'pm10']
-LAG_STEPS         = 6
-ROLLING_WINDOWS   = [3, 6, 12]
+TARGET_COLS    = ['pm1', 'pm2_5', 'pm10']
+WEATHER_COLS   = ['temperature', 'humidity']
+FEATURE_COLS   = TARGET_COLS + WEATHER_COLS
 
-RETRAIN_EVERY     = 10        # retrain every N cycles
-LOOP_INTERVAL     = 600       # seconds between cycles
-PREDICT_AHEAD_S   = 600       # label: prediction horizon in seconds
-MIN_ROWS_TO_TRAIN = 50
-MAX_RETRIES       = 3
-RETRY_DELAY       = 5         # seconds between Firebase retries
+LAG_STEPS      = 6
+ROLLING_WIN    = [3, 6, 12]
+
+RETRAIN_EVERY        = 10      # retrain every N cycles
+LOOP_INTERVAL        = 600     # seconds between prediction cycles
+PREDICT_AHEAD_S      = 600     # prediction horizon label (seconds)
+MIN_ROWS_TO_TRAIN    = 30      # minimum rows for Ridge fallback
+MIN_ROWS_FOR_XGB     = 80      # minimum rows for XGBoost (use Ridge below this)
+MAX_RETRIES          = 3
+RETRY_DELAY          = 5
+HISTORY_LIMIT        = 1000    # records per device to fetch
+RETRAIN_R2_THRESHOLD = 0.35    # force retrain if avg R^2 drops below this
+
+# Column name aliases — maps canonical name -> possible Firebase field names
+COL_ALIASES: dict[str, list[str]] = {
+    'pm1'        : ['pm1', 'pm1_0', 'PM1', 'PM1_0', 'pm1.0'],
+    'pm2_5'      : ['pm2_5', 'pm25', 'pm2.5', 'PM2_5', 'PM25', 'PM2.5'],
+    'pm10'       : ['pm10', 'PM10'],
+    'temperature': ['temperature', 'temp', 'Temperature', 'Temp', 'TEMP'],
+    'humidity'   : ['humidity', 'humi', 'hum', 'Humidity', 'RH'],
+    # timestamp/datetime are parsed separately — do NOT include here
+}
+
+# Possible names for the timestamp column in Firebase
+TS_CANDIDATES = ['timestamp', 'time', 'ts', 'Timestamp', 'Time', 'datetime', 'Datetime']
 
 # ── Firebase ──────────────────────────────────────────────────────────────────
 def connect_firebase():
@@ -68,89 +94,143 @@ def connect_firebase():
     log.info("Firebase connected")
 
 
-def _fb_get(ref_path, limit=800):
+def _fb_get(ref_path: str, limit: int = HISTORY_LIMIT):
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             return db.reference(ref_path).order_by_key().limit_to_last(limit).get()
         except Exception as exc:
-            log.warning(f"Firebase GET attempt {attempt}/{MAX_RETRIES}: {exc}")
+            log.warning(f"Firebase GET attempt {attempt}/{MAX_RETRIES} [{ref_path}]: {exc}")
             if attempt < MAX_RETRIES:
                 time.sleep(RETRY_DELAY)
     return None
 
 
-def _fb_set(ref_path, data):
+def _fb_set(ref_path: str, data: dict) -> bool:
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             db.reference(ref_path).set(data)
             return True
         except Exception as exc:
-            log.warning(f"Firebase SET attempt {attempt}/{MAX_RETRIES}: {exc}")
+            log.warning(f"Firebase SET attempt {attempt}/{MAX_RETRIES} [{ref_path}]: {exc}")
             if attempt < MAX_RETRIES:
                 time.sleep(RETRY_DELAY)
     return False
 
+# ── Column normalization ───────────────────────────────────────────────────────
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Rename Firebase columns to canonical names using COL_ALIASES."""
+    rename_map = {}
+    for canonical, aliases in COL_ALIASES.items():
+        if canonical in df.columns:
+            continue
+        for alias in aliases:
+            if alias in df.columns:
+                rename_map[alias] = canonical
+                break
+    if rename_map:
+        log.info(f"  Column rename: {rename_map}")
+        df = df.rename(columns=rename_map)
+    return df
+
 # ── Data fetching ─────────────────────────────────────────────────────────────
-def fetch_all_devices(limit=800):
-    """Return {device_name: DataFrame} for all /sensor/* paths."""
+def fetch_all_devices() -> dict[str, pd.DataFrame]:
+    """
+    Load sensor data from Firebase in a single pass.
+    Returns {device_name: DataFrame} with canonical column names.
+    """
     try:
-        sensor_ref = db.reference(SENSOR_BASE).get()
-        if not sensor_ref:
+        # Load entire /sensor tree once (gets device list + recent data)
+        sensor_data = db.reference(SENSOR_BASE).get()
+        if not sensor_data:
             log.warning("No data at /sensor")
             return {}
 
-        devices = list(sensor_ref.keys())
+        devices = list(sensor_data.keys())
         log.info(f"Found {len(devices)} devices: {devices}")
         result = {}
 
         for device in devices:
-            raw = _fb_get(f'{SENSOR_BASE}/{device}/history', limit=limit)
+            # Use already-loaded data; fall back to direct fetch for large histories
+            device_data = sensor_data.get(device, {})
+            raw = device_data.get('history')
+
             if not raw:
-                log.warning(f"{device}: no history")
+                # Try direct fetch (device history might exceed shallow load)
+                raw = _fb_get(f'{SENSOR_BASE}/{device}/history', limit=HISTORY_LIMIT)
+
+            if not raw:
+                log.warning(f"{device}: no history data")
                 continue
 
-            df = pd.DataFrame.from_dict(raw, orient='index')
-
-            if 'timestamp' in df.columns:
-                df['timestamp'] = pd.to_numeric(df['timestamp'], errors='coerce')
-            elif 'datetime' in df.columns:
-                df['timestamp'] = (
-                    pd.to_datetime(df['datetime'], errors='coerce')
-                    .astype('int64') // 10**9
-                )
+            # Keep only the last HISTORY_LIMIT records
+            if isinstance(raw, dict):
+                keys = sorted(raw.keys())[-HISTORY_LIMIT:]
+                raw = {k: raw[k] for k in keys}
+                df = pd.DataFrame.from_dict(raw, orient='index')
             else:
-                df['timestamp'] = np.arange(len(df))
+                log.warning(f"{device}: unexpected history format")
+                continue
 
-            for col in FEATURE_COLS:
-                if col in df.columns:
-                    df[col] = pd.to_numeric(df[col], errors='coerce')
-                else:
-                    log.warning(f"{device}: missing '{col}', filling 0")
+            # Parse timestamp BEFORE column normalization (avoids rename collision)
+            ts_col = next((c for c in TS_CANDIDATES if c in df.columns), None)
+            if ts_col:
+                ts = pd.to_numeric(df[ts_col], errors='coerce')
+                # If mostly NaN, the column likely holds datetime strings
+                if ts.isna().mean() > 0.5:
+                    ts = (
+                        pd.to_datetime(df[ts_col], errors='coerce')
+                        .astype('int64') // 10**9
+                    )
+                    ts = ts.where(ts > 0, other=np.nan)
+                df['timestamp'] = ts
+                # Handle millisecond timestamps (Unix ms > year 2100 in seconds)
+                mask_ms = df['timestamp'] > 4_102_444_800
+                df.loc[mask_ms, 'timestamp'] = df.loc[mask_ms, 'timestamp'] / 1000
+            else:
+                df['timestamp'] = np.arange(len(df)) * 60  # fallback: 1-min spacing
+
+            # Now normalize sensor column names (temperature, humidity, pm2_5, etc.)
+            df = normalize_columns(df)
+
+            # Ensure all feature columns exist; fill missing weather with median
+            for col in TARGET_COLS:
+                if col not in df.columns:
+                    log.warning(f"{device}: missing '{col}' — filling 0")
                     df[col] = 0.0
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+            for col in WEATHER_COLS:
+                if col not in df.columns:
+                    default = 25.0 if col == 'temperature' else 70.0
+                    df[col] = default
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+                df[col] = df[col].fillna(df[col].median() if df[col].notna().any() else (25.0 if col == 'temperature' else 70.0))
 
             df = df.sort_values('timestamp').reset_index(drop=True)
 
+            # Clip outliers to 1st–99th percentile (preserve more data than IQR drop)
             for col in TARGET_COLS:
-                Q1, Q3 = df[col].quantile(0.25), df[col].quantile(0.75)
-                IQR = Q3 - Q1
-                df = df[(df[col] >= Q1 - 3 * IQR) & (df[col] <= Q3 + 3 * IQR)]
+                lo, hi = df[col].quantile(0.01), df[col].quantile(0.99)
+                df[col] = df[col].clip(lower=max(lo, 0), upper=hi)
 
+            # Interpolate remaining NaNs
             df[FEATURE_COLS] = df[FEATURE_COLS].interpolate('linear').ffill().bfill()
-            df = df.reset_index(drop=True)
+            df = df.dropna(subset=FEATURE_COLS).reset_index(drop=True)
 
             result[device] = df[['timestamp'] + FEATURE_COLS]
-            log.info(f"  {device}: {len(df)} rows (after cleaning)")
+            log.info(f"  {device}: {len(df)} rows")
 
         return result
 
     except Exception as exc:
-        log.error(f"fetch_all_devices: {exc}")
+        log.error(f"fetch_all_devices error: {exc}")
         return {}
 
 # ── Feature engineering ───────────────────────────────────────────────────────
-def build_features(df: pd.DataFrame):
+def build_features(df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     out = df.copy().reset_index(drop=True)
 
+    # Time features
     dt = pd.to_datetime(out['timestamp'], unit='s', utc=True).dt.tz_convert('Asia/Bangkok')
     out['hour']        = dt.dt.hour
     out['day_of_week'] = dt.dt.dayofweek
@@ -159,34 +239,45 @@ def build_features(df: pd.DataFrame):
     out['is_night']    = ((out['hour'] >= 22) | (out['hour'] <= 6)).astype(int)
     out['sin_hour']    = np.sin(2 * np.pi * out['hour'] / 24)
     out['cos_hour']    = np.cos(2 * np.pi * out['hour'] / 24)
+    out['sin_dow']     = np.sin(2 * np.pi * out['day_of_week'] / 7)
+    out['cos_dow']     = np.cos(2 * np.pi * out['day_of_week'] / 7)
 
     feature_names = [
         'hour', 'day_of_week', 'month', 'is_rush', 'is_night',
-        'sin_hour', 'cos_hour', 'temperature', 'humidity',
+        'sin_hour', 'cos_hour', 'sin_dow', 'cos_dow',
+        'temperature', 'humidity',
     ]
 
+    # Delta features (rate of change)
     for col in FEATURE_COLS:
-        out[f'{col}_delta1'] = out[col].diff(1)
-        out[f'{col}_delta2'] = out[col].diff(2)
-        feature_names += [f'{col}_delta1', f'{col}_delta2']
+        out[f'{col}_d1'] = out[col].diff(1)
+        out[f'{col}_d2'] = out[col].diff(2)
+        feature_names += [f'{col}_d1', f'{col}_d2']
 
+    # Lag features
     for col in FEATURE_COLS:
         for lag in range(1, LAG_STEPS + 1):
             name = f'{col}_lag{lag}'
             out[name] = out[col].shift(lag)
             feature_names.append(name)
 
+    # Rolling statistics
     for col in TARGET_COLS:
-        for w in ROLLING_WINDOWS:
-            out[f'{col}_rmean{w}'] = out[col].shift(1).rolling(w).mean()
-            out[f'{col}_rstd{w}']  = out[col].shift(1).rolling(w).std()
-            out[f'{col}_rmax{w}']  = out[col].shift(1).rolling(w).max()
-            feature_names += [f'{col}_rmean{w}', f'{col}_rstd{w}', f'{col}_rmax{w}']
+        for w in ROLLING_WIN:
+            shifted = out[col].shift(1)
+            out[f'{col}_rmean{w}'] = shifted.rolling(w, min_periods=1).mean()
+            out[f'{col}_rstd{w}']  = shifted.rolling(w, min_periods=2).std().fillna(0)
+            out[f'{col}_rmax{w}']  = shifted.rolling(w, min_periods=1).max()
+            out[f'{col}_rmin{w}']  = shifted.rolling(w, min_periods=1).min()
+            feature_names += [f'{col}_rmean{w}', f'{col}_rstd{w}',
+                               f'{col}_rmax{w}', f'{col}_rmin{w}']
 
-    out['temp_x_hum'] = out['temperature'] * out['humidity']
-    out['pm_ratio']   = out['pm2_5'] / (out['pm10'] + 1e-6)
-    out['pm1_pm25_r'] = out['pm1'] / (out['pm2_5'] + 1e-6)
-    feature_names += ['temp_x_hum', 'pm_ratio', 'pm1_pm25_r']
+    # Interaction features
+    out['temp_x_hum']  = out['temperature'] * out['humidity']
+    out['pm_ratio']    = out['pm2_5'] / (out['pm10'] + 1e-6)
+    out['pm1_pm25_r']  = out['pm1'] / (out['pm2_5'] + 1e-6)
+    out['aqi_approx']  = (out['pm2_5'] / 35.4).clip(0, 6)  # rough AQI scale
+    feature_names += ['temp_x_hum', 'pm_ratio', 'pm1_pm25_r', 'aqi_approx']
 
     out.dropna(inplace=True)
     out.reset_index(drop=True, inplace=True)
@@ -194,9 +285,35 @@ def build_features(df: pd.DataFrame):
     valid = [c for c in feature_names if c in out.columns]
     return out, valid
 
+# ── Model selection ───────────────────────────────────────────────────────────
+def _make_xgb_model() -> MultiOutputRegressor:
+    """XGBoost model tuned for air quality time series (PM tabular prediction)."""
+    xgb = XGBRegressor(
+        n_estimators=350,
+        learning_rate=0.05,
+        max_depth=4,
+        subsample=0.8,
+        colsample_bytree=0.75,
+        reg_alpha=0.1,
+        reg_lambda=1.0,
+        min_child_weight=5,
+        gamma=0.05,
+        random_state=42,
+        verbosity=0,
+        n_jobs=-1,
+    )
+    return MultiOutputRegressor(xgb, n_jobs=1)
+
+
+def _make_ridge_model() -> Pipeline:
+    """Ridge regression fallback — fast, stable, works with small datasets."""
+    return Pipeline([
+        ('scaler', StandardScaler()),
+        ('ridge', Ridge(alpha=10.0)),
+    ])
+
 # ── Model persistence ─────────────────────────────────────────────────────────
-def load_saved_models():
-    """Load all dust_model_*.pkl files from disk. Returns (models, feat_cols, metrics)."""
+def load_saved_models() -> tuple[dict, dict, dict]:
     models, feat_cols, metrics = {}, {}, {}
     for path in sorted(Path('.').glob('dust_model_*.pkl')):
         device = path.stem.replace('dust_model_', '')
@@ -205,37 +322,37 @@ def load_saved_models():
             models[device]    = saved['model']
             feat_cols[device] = saved['features']
             metrics[device]   = saved.get('metrics', (0.0, 0.0))
-            log.info(f"Loaded model: {device}  R²={metrics[device][0]:.3f}")
+            kind              = saved.get('kind', 'xgb')
+            log.info(f"Loaded model [{device}] type={kind}  R^2={metrics[device][0]:.3f}")
         except Exception as exc:
             log.warning(f"Could not load {path}: {exc}")
     return models, feat_cols, metrics
 
 # ── Training ──────────────────────────────────────────────────────────────────
-def train_all_devices(device_dfs: dict):
+def train_all_devices(device_dfs: dict) -> tuple[dict, dict, dict]:
     models, feat_cols, metrics_dict = {}, {}, {}
 
     for device, df in device_dfs.items():
         log.info(f"Training [{device}]  rows={len(df)}")
         df_feat, f_cols = build_features(df)
 
-        if len(df_feat) < MIN_ROWS_TO_TRAIN:
-            log.warning(f"  {device}: only {len(df_feat)} rows after feature eng — skip")
+        n_rows = len(df_feat)
+        if n_rows < MIN_ROWS_TO_TRAIN:
+            log.warning(f"  {device}: {n_rows} rows after feature eng — need ≥{MIN_ROWS_TO_TRAIN}, skip")
             continue
 
         X = df_feat[f_cols].values
         y = df_feat[TARGET_COLS].values
 
-        xgb = XGBRegressor(
-            n_estimators=400, learning_rate=0.04, max_depth=4,
-            subsample=0.8, colsample_bytree=0.8,
-            reg_alpha=0.1, reg_lambda=1.0, min_child_weight=3,
-            random_state=42, verbosity=0,
-        )
-        model = MultiOutputRegressor(xgb)
+        # Choose model based on available data
+        use_xgb = n_rows >= MIN_ROWS_FOR_XGB
+        model_kind = 'xgb' if use_xgb else 'ridge'
+        model = _make_xgb_model() if use_xgb else _make_ridge_model()
+        log.info(f"  {device}: using {'XGBoost' if use_xgb else 'Ridge'} ({n_rows} rows)")
 
-        n_splits = min(5, len(X) // 20)
+        # Cross-validation for performance estimate
+        n_splits = min(5, n_rows // 20)
         if n_splits < 2:
-            log.warning(f"  {device}: not enough data for CV — training without CV")
             model.fit(X, y)
             perf = (0.0, 0.0)
         else:
@@ -244,23 +361,27 @@ def train_all_devices(device_dfs: dict):
             for tr, te in tscv.split(X):
                 model.fit(X[tr], y[tr])
                 pred = model.predict(X[te])
-                r2_list.append(r2_score(y[te], pred))
+                r2_list.append(r2_score(y[te], pred, multioutput='uniform_average'))
                 mae_list.append(mean_absolute_error(y[te], pred))
 
             mean_r2  = float(np.mean(r2_list))
             mean_mae = float(np.mean(mae_list))
-            log.info(f"  {device}: R²={mean_r2:.4f} ({mean_r2*100:.1f}%)  MAE={mean_mae:.4f}")
-            log.info(f"  {device}: fold R²s = {[f'{v:.3f}' for v in r2_list]}")
+            log.info(f"  {device}: R^2={mean_r2:.4f} ({mean_r2*100:.1f}%)  MAE={mean_mae:.4f}")
+            log.info(f"  {device}: fold R^2s = {[f'{v:.3f}' for v in r2_list]}")
 
+            # Final fit on all data
             model.fit(X, y)
-            imps = np.mean([e.feature_importances_ for e in model.estimators_], axis=0)
-            top5 = sorted(zip(f_cols, imps), key=lambda x: -x[1])[:5]
-            log.info(f"  {device}: top-5 features = {[t[0] for t in top5]}")
+
+            if use_xgb:
+                imps = np.mean([e.feature_importances_ for e in model.estimators_], axis=0)
+                top5 = sorted(zip(f_cols, imps), key=lambda x: -x[1])[:5]
+                log.info(f"  {device}: top-5 features = {[t[0] for t in top5]}")
+
             perf = (mean_r2, mean_mae)
 
         path = MODEL_SAVE_PATH.format(device=device)
-        joblib.dump({'model': model, 'features': f_cols, 'metrics': perf}, path)
-        log.info(f"  Saved → {path}")
+        joblib.dump({'model': model, 'features': f_cols, 'metrics': perf, 'kind': model_kind}, path)
+        log.info(f"  Saved -> {path}")
 
         models[device]       = model
         feat_cols[device]    = f_cols
@@ -269,11 +390,12 @@ def train_all_devices(device_dfs: dict):
     return models, feat_cols, metrics_dict
 
 # ── Prediction ────────────────────────────────────────────────────────────────
-def predict_all(models, feat_cols, metrics_dict, device_dfs):
+def predict_all(
+    models: dict, feat_cols: dict, metrics_dict: dict, device_dfs: dict
+) -> tuple[np.ndarray | None, dict]:
     """
     Predict next cycle for each device.
-    Weighted average uses max(R², 0.01) so better-performing models get more weight.
-    Returns: (weighted_avg_array, per_device_dict)
+    Weighted average uses max(R^2, 0.01) — better models get more weight.
     """
     all_preds, weights = [], []
     per_device = {}
@@ -288,21 +410,27 @@ def predict_all(models, feat_cols, metrics_dict, device_dfs):
                 continue
 
             f_cols = feat_cols[device]
-            latest = df_feat.sort_values('timestamp').iloc[[-1]]
-            pred   = np.clip(model.predict(latest[f_cols].values)[0], 0, None)
+            latest = df_feat.sort_values('timestamp').iloc[[-1]].copy()
+
+            # Align feature columns — use assign() to avoid pandas CoW issues
+            missing = {c: 0.0 for c in f_cols if c not in latest.columns}
+            if missing:
+                latest = latest.assign(**missing)
+
+            pred = np.clip(model.predict(latest[f_cols].values)[0], 0, None)
 
             r2 = metrics_dict.get(device, (0.0, 0.0))[0]
             w  = max(r2, 0.01)
 
             per_device[device] = {
-                'pm1':   round(float(pred[0]), 2),
+                'pm1'  : round(float(pred[0]), 2),
                 'pm2_5': round(float(pred[1]), 2),
-                'pm10':  round(float(pred[2]), 2),
-                'r2':    round(r2, 4),
+                'pm10' : round(float(pred[2]), 2),
+                'r2'   : round(r2, 4),
             }
             all_preds.append(pred)
             weights.append(w)
-            log.info(f"  {device}: PM1={pred[0]:.1f}  PM2.5={pred[1]:.1f}  PM10={pred[2]:.1f}  R²={r2:.3f}")
+            log.info(f"  {device}: PM1={pred[0]:.1f}  PM2.5={pred[1]:.1f}  PM10={pred[2]:.1f}  R^2={r2:.3f}")
 
         except Exception as exc:
             log.error(f"predict [{device}]: {exc}")
@@ -310,22 +438,21 @@ def predict_all(models, feat_cols, metrics_dict, device_dfs):
     if not all_preds:
         return None, {}
 
-    w = np.array(weights)
-    w = w / w.sum()
+    w = np.array(weights) / np.sum(weights)
     final = np.average(np.array(all_preds), axis=0, weights=w)
     return final, per_device
 
-# ── AQI ───────────────────────────────────────────────────────────────────────
-def classify_aqi(pm25):
-    if   pm25 <= 12.0 : return {'level': 1, 'label': 'ดีมาก',          'color': 'green'}
-    elif pm25 <= 35.4 : return {'level': 2, 'label': 'ดี',             'color': 'lightgreen'}
-    elif pm25 <= 55.4 : return {'level': 3, 'label': 'ปานกลาง',        'color': 'yellow'}
-    elif pm25 <= 150.4: return {'level': 4, 'label': 'มีผลต่อสุขภาพ',  'color': 'orange'}
-    elif pm25 <= 250.4: return {'level': 5, 'label': 'อันตราย',         'color': 'red'}
-    else              : return {'level': 6, 'label': 'อันตรายมาก',      'color': 'purple'}
+# ── AQI classification ────────────────────────────────────────────────────────
+def classify_aqi(pm25: float) -> dict:
+    if   pm25 <= 12.0 : return {'level': 1, 'label': 'ดีมาก',         'color': '#16a34a'}
+    elif pm25 <= 35.4 : return {'level': 2, 'label': 'ดี',            'color': '#65a30d'}
+    elif pm25 <= 55.4 : return {'level': 3, 'label': 'ปานกลาง',       'color': '#d97706'}
+    elif pm25 <= 150.4: return {'level': 4, 'label': 'มีผลต่อสุขภาพ', 'color': '#ea580c'}
+    elif pm25 <= 250.4: return {'level': 5, 'label': 'อันตราย',        'color': '#dc2626'}
+    else              : return {'level': 6, 'label': 'อันตรายมาก',     'color': '#7c3aed'}
 
-# ── Upload ────────────────────────────────────────────────────────────────────
-def upload_result(preds, metrics_dict, per_device):
+# ── Upload to Firebase ────────────────────────────────────────────────────────
+def upload_result(preds: np.ndarray, metrics_dict: dict, per_device: dict) -> dict:
     ts  = int(time.time())
     aqi = classify_aqi(float(preds[1]))
 
@@ -340,7 +467,7 @@ def upload_result(preds, metrics_dict, per_device):
         'pm10'             : round(float(preds[2]), 2),
         'r2_score'         : round(avg_r2, 4),
         'mae'              : round(avg_mae, 4),
-        'confidence'       : round(avg_r2 * 100, 1),
+        'confidence'       : round(max(avg_r2, 0) * 100, 1),
         'aqi_level'        : aqi,
         'per_device'       : per_device,
         'predict_horizon_s': PREDICT_AHEAD_S,
@@ -351,13 +478,23 @@ def upload_result(preds, metrics_dict, per_device):
     ok = _fb_set(PREDICTION_PATH, data)
     _fb_set(f'{HISTORY_PATH}/{ts}', data)
     if ok:
-        log.info(f"Uploaded → {PREDICTION_PATH}")
+        log.info(f"Uploaded -> {PREDICTION_PATH}")
     return data
+
+# ── Should we retrain? ────────────────────────────────────────────────────────
+def _should_retrain(cycle: int, metrics_dict: dict) -> bool:
+    if cycle % RETRAIN_EVERY == 0:
+        return True
+    r2_vals = [v[0] for v in metrics_dict.values() if v[0] > 0]
+    if r2_vals and np.mean(r2_vals) < RETRAIN_R2_THRESHOLD:
+        log.info(f"R^2 dropped below {RETRAIN_R2_THRESHOLD:.2f} — forcing retrain")
+        return True
+    return False
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 def main():
     log.info("=" * 60)
-    log.info("  AI DUST PREDICTOR v3  (per-device • R²-weighted • persistent)")
+    log.info("  AI DUST PREDICTOR v4  (XGBoost + Ridge • adaptive retrain)")
     log.info("=" * 60)
 
     connect_firebase()
@@ -366,37 +503,63 @@ def main():
     if models:
         log.info(f"Loaded {len(models)} saved model(s) — will retrain on cycle {RETRAIN_EVERY}")
     else:
-        log.info("No saved models found — will train on first cycle")
+        log.info("No saved models found — training on first cycle")
 
     cycle = 0
+    consecutive_errors = 0
+
     try:
         while True:
             cycle += 1
-            log.info(f"──── Cycle {cycle}  [{datetime.now().strftime('%H:%M:%S')}] ────")
+            log.info(f"──── Cycle {cycle}  [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ────")
 
-            device_dfs = fetch_all_devices()
-            if not device_dfs:
-                log.warning(f"No device data — sleeping {LOOP_INTERVAL}s")
-                time.sleep(LOOP_INTERVAL)
-                continue
+            try:
+                device_dfs = fetch_all_devices()
+                if not device_dfs:
+                    log.warning(f"No device data — retrying in {LOOP_INTERVAL}s")
+                    consecutive_errors += 1
+                    time.sleep(LOOP_INTERVAL)
+                    continue
 
-            if not models or cycle % RETRAIN_EVERY == 0:
-                models, feat_cols, metrics_dict = train_all_devices(device_dfs)
+                # Train or retrain
+                if not models or _should_retrain(cycle, metrics_dict):
+                    new_models, new_feats, new_metrics = train_all_devices(device_dfs)
+                    if new_models:
+                        models, feat_cols, metrics_dict = new_models, new_feats, new_metrics
+                    elif not models:
+                        log.warning("Training produced no models — will retry next cycle")
+                        time.sleep(LOOP_INTERVAL)
+                        continue
 
-            if models:
-                preds, per_device = predict_all(models, feat_cols, metrics_dict, device_dfs)
+                # Predict and upload
+                if models:
+                    preds, per_device = predict_all(models, feat_cols, metrics_dict, device_dfs)
 
-                if preds is not None:
-                    aqi      = classify_aqi(float(preds[1]))
-                    r2_vals  = [v[0] for v in metrics_dict.values() if v[0] > 0]
-                    mae_vals = [v[1] for v in metrics_dict.values() if v[1] > 0]
-                    avg_r2   = np.mean(r2_vals)  if r2_vals  else 0
-                    avg_mae  = np.mean(mae_vals) if mae_vals else 0
+                    if preds is not None:
+                        aqi     = classify_aqi(float(preds[1]))
+                        r2_vals = [v[0] for v in metrics_dict.values() if v[0] > 0]
+                        avg_r2  = np.mean(r2_vals) if r2_vals else 0
+                        avg_mae = np.mean([v[1] for v in metrics_dict.values() if v[1] > 0]) if r2_vals else 0
 
-                    log.info(f"Result → PM1={preds[0]:.2f}  PM2.5={preds[1]:.2f}  PM10={preds[2]:.2f}")
-                    log.info(f"         AQI={aqi['label']}  R²={avg_r2*100:.1f}%  MAE={avg_mae:.2f} µg/m³")
+                        log.info(f"Result -> PM1={preds[0]:.2f}  PM2.5={preds[1]:.2f}  PM10={preds[2]:.2f}")
+                        log.info(f"         AQI={aqi['label']}  R^2={avg_r2*100:.1f}%  MAE={avg_mae:.2f} ug/m3")
 
-                    upload_result(preds, metrics_dict, per_device)
+                        upload_result(preds, metrics_dict, per_device)
+                    else:
+                        # Models may be stale/incompatible — force retrain next cycle
+                        log.warning("Prediction failed — forcing retrain on next cycle")
+                        models = {}
+
+                consecutive_errors = 0
+
+            except Exception as exc:
+                consecutive_errors += 1
+                log.error(f"Cycle {cycle} error (#{consecutive_errors}): {exc}", exc_info=True)
+                # Back off if repeated errors
+                if consecutive_errors >= 5:
+                    log.error("5 consecutive errors — sleeping 5 minutes before retry")
+                    time.sleep(300)
+                    consecutive_errors = 0
 
             log.info(f"Sleeping {LOOP_INTERVAL}s…")
             time.sleep(LOOP_INTERVAL)
