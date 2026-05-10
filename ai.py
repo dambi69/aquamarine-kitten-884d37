@@ -91,8 +91,19 @@ TS_CANDIDATES = ['timestamp', 'time', 'ts', 'Timestamp', 'Time', 'datetime', 'Da
 def connect_firebase():
     if not firebase_admin._apps:
         if FIREBASE_CREDENTIALS_JSON:
-            import json
-            cred = credentials.Certificate(json.loads(FIREBASE_CREDENTIALS_JSON))
+            import json, re
+            raw = FIREBASE_CREDENTIALS_JSON
+            try:
+                cred_dict = json.loads(raw)
+            except json.JSONDecodeError:
+                # Railway may unescaped \n inside private_key value — re-escape them
+                fixed = re.sub(
+                    r'("private_key"\s*:\s*")(.*?)(")',
+                    lambda m: m.group(1) + m.group(2).replace('\n', '\\n') + m.group(3),
+                    raw, flags=re.DOTALL
+                )
+                cred_dict = json.loads(fixed)
+            cred = credentials.Certificate(cred_dict)
         else:
             cred = credentials.Certificate(SERVICE_ACCOUNT_KEY)
         firebase_admin.initialize_app(cred, {'databaseURL': DATABASE_URL})
