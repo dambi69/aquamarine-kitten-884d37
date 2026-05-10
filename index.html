@@ -208,7 +208,7 @@ body { font-family:'Nunito','Sarabun',sans-serif; background:transparent; color:
 .conf-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
 .conf-label { font-size:.65rem; color:var(--sub); font-weight:600; white-space:nowrap; }
 .conf-bar-bg { flex:1; height:8px; border-radius:99px; background:var(--border); overflow:hidden; }
-.conf-bar { height:100%; border-radius:99px; background:linear-gradient(to right,#4f87ff,#0dbcb9); transition:width .8s cubic-bezier(.34,1.56,.64,1); }
+.conf-bar { height:100%; border-radius:99px; background:linear-gradient(to right,#38bdf8,#0dbcb9); transition:width .8s cubic-bezier(.34,1.56,.64,1); }
 .conf-pct { font-family:'DM Mono',monospace; font-size:.72rem; font-weight:600; color:var(--blue); white-space:nowrap; min-width:36px; text-align:right; }
 .pred-footer { display:flex; justify-content:space-between; font-size:.63rem; color:var(--sub); }
 .pred-nodata { text-align:center; padding:12px; font-size:.75rem; color:var(--sub); }
@@ -347,8 +347,8 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 .twin-btn { background:var(--raised); border:1px solid var(--border); border-radius:12px; padding:6px 14px; font-size:.7rem; font-weight:600; color:var(--blue); cursor:pointer; white-space:nowrap; font-family:'Prompt',sans-serif; transition:background .15s; }
 .twin-btn:hover { background:var(--border); }
 .twin-btn.ene  { background:rgba(2,132,199,.1); color:#0284c7; border-color:rgba(2,132,199,.25); }
-.twin-btn.dev2 { background:rgba(219,39,119,.1); color:#db2777; border-color:rgba(219,39,119,.25); }
-.twin-btn.dev3 { background:rgba(217,119,6,.1); color:#d97706; border-color:rgba(217,119,6,.25); }
+.twin-btn.dev2 { background:rgba(139,92,246,.1); color:#8b5cf6; border-color:rgba(139,92,246,.25); }
+.twin-btn.dev3 { background:rgba(13,188,185,.1); color:#0dbcb9; border-color:rgba(13,188,185,.25); }
 
 .Hotspot { background:var(--blue); border-radius:50%; border:2px solid white; width:16px; height:16px; box-shadow:0 2px 8px rgba(0,0,0,.3); cursor:pointer; transition:transform .2s; }
 .Hotspot:hover { transform:scale(1.3); }
@@ -422,9 +422,9 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 .sensor-cards::-webkit-scrollbar { display:none; }
 .sensor-card { flex:0 0 calc(50% - 5px); max-width:200px; min-width:140px; scroll-snap-align:start; background:var(--glass); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:2px solid var(--glass-border); border-radius:20px; padding:14px 14px 10px; cursor:pointer; transition:border-color .25s,box-shadow .25s,transform .2s; position:relative; overflow:hidden; box-shadow:var(--glass-shadow); }
 .sensor-card:active { transform:scale(.97); }
-.sensor-card.sc-active { border-color:var(--blue); box-shadow:var(--glass-shadow), 0 0 0 3px rgba(79,135,255,.18), 0 4px 20px rgba(79,135,255,.2); }
-.sensor-card[data-device="device2"].sc-active { border-color:#db2777; box-shadow:var(--glass-shadow), 0 0 0 3px rgba(219,39,119,.18), 0 4px 20px rgba(219,39,119,.2); }
-.sensor-card[data-device="device3"].sc-active { border-color:#d97706; box-shadow:var(--glass-shadow), 0 0 0 3px rgba(217,119,6,.18), 0 4px 20px rgba(217,119,6,.2); }
+.sensor-card.sc-active { border-color:var(--blue); box-shadow:var(--glass-shadow), 0 0 0 3px rgba(56,189,248,.18), 0 4px 20px rgba(56,189,248,.2); }
+.sensor-card[data-device="device2"].sc-active { border-color:#8b5cf6; box-shadow:var(--glass-shadow), 0 0 0 3px rgba(139,92,246,.18), 0 4px 20px rgba(139,92,246,.2); }
+.sensor-card[data-device="device3"].sc-active { border-color:#0dbcb9; box-shadow:var(--glass-shadow), 0 0 0 3px rgba(13,188,185,.18), 0 4px 20px rgba(13,188,185,.2); }
 .sc-header { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
 .sc-live-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; animation:blink 2s infinite; }
 .sc-name { font-size:.68rem; font-weight:700; color:var(--sub); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -437,8 +437,8 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 .sc-spark canvas { width:100% !important; height:34px !important; }
 /* Selected indicator chip */
 .sensor-card.sc-active::after { content:'เลือกอยู่'; position:absolute; top:10px; right:10px; font-size:.5rem; font-weight:700; background:var(--blue); color:#fff; padding:2px 7px; border-radius:99px; }
-.sensor-card[data-device="device2"].sc-active::after { background:#db2777; }
-.sensor-card[data-device="device3"].sc-active::after { background:#d97706; }
+.sensor-card[data-device="device2"].sc-active::after { background:#8b5cf6; }
+.sensor-card[data-device="device3"].sc-active::after { background:#0dbcb9; }
 
 /* ── Client-side forecast controls ── */
 .forecast-controls { display:flex; align-items:center; gap:7px; margin-top:11px; flex-wrap:wrap; padding-top:11px; border-top:1px solid var(--border); }
@@ -557,68 +557,6 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
       <button class="dev-tab active" data-device="device1">S12</button>
       <button class="dev-tab" data-device="device2">SCL</button>
       <button class="dev-tab" data-device="device3">S14</button>
-    </div>
-
-    <!-- Sensor carousel label -->
-    <div style="font-size:.72rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;display:flex;align-items:center;gap:6px;" class="fade" style="animation-delay:.05s">
-      <i class="ti ti-antenna-bars-5"></i> เลือก Sensor · เลื่อนซ้าย-ขวาเพื่อดูทั้งหมด
-    </div>
-
-    <!-- Sensor carousel (tap to select) -->
-    <div class="sensor-cards fade" style="animation-delay:.06s">
-      <div class="sensor-card sc-active" id="sc-device1" data-device="device1">
-        <div class="sc-header">
-          <div class="sc-live-dot" style="background:var(--blue)"></div>
-          <div class="sc-name">S12 · D1</div>
-          <div class="sc-badge" id="sc-badge-device1">--</div>
-        </div>
-        <div class="sc-pm-row">
-          <div class="sc-pm skel" id="sc-pm-device1" style="min-width:40px">--</div>
-          <div class="sc-unit">µg/m³</div>
-        </div>
-        <div class="sc-time" id="sc-time-device1">--</div>
-        <div class="sc-spark"><canvas id="spark-device1"></canvas></div>
-      </div>
-      <div class="sensor-card" id="sc-device2" data-device="device2">
-        <div class="sc-header">
-          <div class="sc-live-dot" style="background:#db2777"></div>
-          <div class="sc-name">SCL · D2</div>
-          <div class="sc-badge" id="sc-badge-device2">--</div>
-        </div>
-        <div class="sc-pm-row">
-          <div class="sc-pm skel" id="sc-pm-device2" style="min-width:40px">--</div>
-          <div class="sc-unit">µg/m³</div>
-        </div>
-        <div class="sc-time" id="sc-time-device2">--</div>
-        <div class="sc-spark"><canvas id="spark-device2"></canvas></div>
-      </div>
-      <div class="sensor-card" id="sc-device3" data-device="device3">
-        <div class="sc-header">
-          <div class="sc-live-dot" style="background:#d97706"></div>
-          <div class="sc-name">S14 · D3</div>
-          <div class="sc-badge" id="sc-badge-device3">--</div>
-        </div>
-        <div class="sc-pm-row">
-          <div class="sc-pm skel" id="sc-pm-device3" style="min-width:40px">--</div>
-          <div class="sc-unit">µg/m³</div>
-        </div>
-        <div class="sc-time" id="sc-time-device3">--</div>
-        <div class="sc-spark"><canvas id="spark-device3"></canvas></div>
-      </div>
-    </div>
-
-    <!-- AQI Dot Timeline -->
-    <div class="dot-timeline fade" style="animation-delay:.07s">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="font-size:.72rem;font-weight:700;color:var(--sub);display:flex;align-items:center;gap:6px"><i class="ti ti-timeline"></i> ประวัติคุณภาพอากาศ (จุดล่าสุด)</div>
-        <div style="display:flex;gap:9px;font-size:.6rem;color:var(--sub);flex-shrink:0">
-          <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;flex-shrink:0"></span>ดี</span>
-          <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#d97706;display:inline-block;flex-shrink:0"></span>ปาน</span>
-          <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#dc2626;display:inline-block;flex-shrink:0"></span>ไม่ดี</span>
-        </div>
-      </div>
-      <div class="dot-row" id="dot-row"></div>
-      <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--sub);margin-top:8px"><span>← ก่อนหน้า</span><span>ล่าสุด →</span></div>
     </div>
 
     <div class="home-grid">
@@ -796,26 +734,6 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
       </div>
     </div>
 
-    <!-- Accordion 4: Weekly trend (closed by default) -->
-    <div class="acc-wrap is-closed fade" id="accw-week" style="animation-delay:.10s">
-      <div class="acc-header" onclick="toggleAcc('accw-week')">
-        <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-calendar-week" style="color:var(--violet)"></i><span class="acc-title">แนวโน้มช่วงข้อมูลที่มี</span></div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <span class="week-delta" id="week-delta" style="font-size:.82rem">--</span>
-          <i class="ti ti-chevron-down acc-chevron"></i>
-        </div>
-      </div>
-      <div class="acc-body" id="acc-body-week">
-        <div class="acc-inner" style="display:flex;align-items:center;gap:14px">
-          <div style="flex:1;min-width:0">
-            <div style="height:50px"><canvas id="week-spark" height="50"></canvas></div>
-          </div>
-          <div style="flex-shrink:0;text-align:right">
-            <div style="font-size:.65rem;color:var(--sub);margin-top:3px" id="week-label">เทียบจุดเริ่ม</div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <button class="more-btn fade" id="btn-allfields">
       <i class="ti ti-microchip"></i> ดูค่าทั้งหมดจากเซนเซอร์ (ทุก device)
@@ -833,19 +751,19 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
       <!-- Sensor comparison bar -->
       <div class="twin-compare">
         <div class="tc-item" id="tc-device1" onclick="switchDevice('device1')">
-          <div class="tc-name" style="color:#4f87ff"><i class="ti ti-antenna-bars-5"></i> S12</div>
+          <div class="tc-name" style="color:#38bdf8"><i class="ti ti-antenna-bars-5"></i> S12</div>
           <div class="tc-pm" id="tc-pm-device1">--</div>
           <div class="tc-lv" id="tc-lv-device1">--</div>
           <div class="tc-trend" id="tc-trend-device1">→</div>
         </div>
         <div class="tc-item" id="tc-device2" onclick="switchDevice('device2')">
-          <div class="tc-name" style="color:#db2777"><i class="ti ti-antenna-bars-5"></i> SCL</div>
+          <div class="tc-name" style="color:#8b5cf6"><i class="ti ti-antenna-bars-5"></i> SCL</div>
           <div class="tc-pm" id="tc-pm-device2">--</div>
           <div class="tc-lv" id="tc-lv-device2">--</div>
           <div class="tc-trend" id="tc-trend-device2">→</div>
         </div>
         <div class="tc-item" id="tc-device3" onclick="switchDevice('device3')">
-          <div class="tc-name" style="color:#d97706"><i class="ti ti-antenna-bars-5"></i> S14</div>
+          <div class="tc-name" style="color:#0dbcb9"><i class="ti ti-antenna-bars-5"></i> S14</div>
           <div class="tc-pm" id="tc-pm-device3">--</div>
           <div class="tc-lv" id="tc-lv-device3">--</div>
           <div class="tc-trend" id="tc-trend-device3">→</div>
@@ -863,7 +781,7 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
             data-position="-363.92m 223.88m -972.39m"
             data-normal="0m 1m 0m">
             <div class="HotspotAnnotation">
-              <div style="font-size:.6rem;font-weight:700;color:#4f87ff;margin-bottom:2px">S12 Sensor</div>
+              <div style="font-size:.6rem;font-weight:700;color:#38bdf8;margin-bottom:2px">S12 Sensor</div>
               <div style="display:flex;align-items:baseline;gap:3px">
                 <span style="font-size:1.2rem;font-weight:800" id="hs-ene-pm">--</span>
                 <span style="font-size:.6rem;color:#64748b">µg/m³</span>
@@ -875,9 +793,9 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
           <button class="Hotspot" slot="hotspot-dev2"
             data-position="428.23m 161.45m -425.44m"
             data-normal="0m 1m 0m"
-            style="background:#db2777">
+            style="background:#8b5cf6">
             <div class="HotspotAnnotation">
-              <div style="font-size:.6rem;font-weight:700;color:#db2777;margin-bottom:2px">SCL Sensor</div>
+              <div style="font-size:.6rem;font-weight:700;color:#8b5cf6;margin-bottom:2px">SCL Sensor</div>
               <div style="display:flex;align-items:baseline;gap:3px">
                 <span style="font-size:1.2rem;font-weight:800" id="hs-dev2-pm">--</span>
                 <span style="font-size:.6rem;color:#64748b">µg/m³</span>
@@ -889,9 +807,9 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
           <button class="Hotspot" slot="hotspot-dev3"
             data-position="-42.32m 131.21m -1172.63m"
             data-normal="0m 1m 0m"
-            style="background:#d97706">
+            style="background:#0dbcb9">
             <div class="HotspotAnnotation">
-              <div style="font-size:.6rem;font-weight:700;color:#d97706;margin-bottom:2px">S14 Sensor</div>
+              <div style="font-size:.6rem;font-weight:700;color:#0dbcb9;margin-bottom:2px">S14 Sensor</div>
               <div style="display:flex;align-items:baseline;gap:3px">
                 <span style="font-size:1.2rem;font-weight:800" id="hs-dev3-pm">--</span>
                 <span style="font-size:.6rem;color:#64748b">µg/m³</span>
@@ -927,7 +845,7 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
     <div class="tiles" style="margin-bottom:10px">
       <div class="tile" id="tile-weather"><div class="tile-emoji"><i class="ti ti-thermometer" style="color:#f45b7a"></i></div><div class="tile-val" id="w-temp">--</div><div class="tile-label">อุณหภูมิ (°C)</div><div class="tile-tap">แตะดู ›</div></div>
       <div class="tile" id="tile-hum"><div class="tile-emoji"><i class="ti ti-droplet" style="color:#8b5cf6"></i></div><div class="tile-val" id="w-hum">--</div><div class="tile-label">ความชื้น (%)</div><div class="tile-tap">แตะดู ›</div></div>
-      <div class="tile" id="tile-wind"><div class="tile-emoji"><i class="ti ti-wind" style="color:#4f87ff"></i></div><div class="tile-val" id="w-wind">--</div><div class="tile-label">ลม (m/s)</div><div class="tile-tap">แตะดู ›</div></div>
+      <div class="tile" id="tile-wind"><div class="tile-emoji"><i class="ti ti-wind" style="color:#38bdf8"></i></div><div class="tile-val" id="w-wind">--</div><div class="tile-label">ลม (m/s)</div><div class="tile-tap">แตะดู ›</div></div>
     </div>
     <!-- Row 2: Wind compass (left) + PM2.5 vs weather (right) -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px">
@@ -1107,14 +1025,14 @@ const fbDb = getDatabase(initializeApp(FB));
 
 /* ── Device metadata ── */
 const DEVICE_INFO = {
-  device1: { name:'S12',  color:'#4f87ff', hotspot:'hotspot-ene',  hsId:'hs-ene-pm'  },
-  device2: { name:'SCL',  color:'#db2777', hotspot:'hotspot-dev2', hsId:'hs-dev2-pm' },
-  device3: { name:'S14',  color:'#d97706', hotspot:'hotspot-dev3', hsId:'hs-dev3-pm' },
+  device1: { name:'S12',  color:'#38bdf8', hotspot:'hotspot-ene',  hsId:'hs-ene-pm'  },
+  device2: { name:'SCL',  color:'#8b5cf6', hotspot:'hotspot-dev2', hsId:'hs-dev2-pm' },
+  device3: { name:'S14',  color:'#0dbcb9', hotspot:'hotspot-dev3', hsId:'hs-dev3-pm' },
 };
 
 /* ── Sensor meta ── */
 const META = {
-  pm2_5:{name:'PM2.5',unit:'µg/m³',icon:'<i class="ti ti-wind"></i>',color:'#4f87ff'},
+  pm2_5:{name:'PM2.5',unit:'µg/m³',icon:'<i class="ti ti-wind"></i>',color:'#38bdf8'},
   pm10:{name:'PM10',unit:'µg/m³',icon:'<i class="ti ti-cloud"></i>',color:'#0dbcb9'},
   pm1:{name:'PM1.0',unit:'µg/m³',icon:'<i class="ti ti-atom-2"></i>',color:'#67e8f9'},
   co2:{name:'CO₂',unit:'ppm',icon:'<i class="ti ti-cloud-fog"></i>',color:'#22c55e'},
@@ -1285,7 +1203,7 @@ function updateSensorCard(device, records){
   if(_scSparkCharts[device]){ _scSparkCharts[device].destroy(); }
   _scSparkCharts[device] = new Chart(canv, {
     type:'line',
-    data:{ labels:pts.map((_,i)=>i), datasets:[{ data:pts, borderColor: lv.color||'#4f87ff', borderWidth:1.5, pointRadius:0, tension:.4, fill:true, backgroundColor: (lv.color||'#4f87ff')+'22' }] },
+    data:{ labels:pts.map((_,i)=>i), datasets:[{ data:pts, borderColor: lv.color||'#38bdf8', borderWidth:1.5, pointRadius:0, tension:.4, fill:true, backgroundColor: (lv.color||'#38bdf8')+'22' }] },
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}} }
   });
   /* update twin comparison on every sensor refresh */
@@ -1405,10 +1323,10 @@ function updateForecast(){
 
 /* ── Trend chart (history + forecast datasets) ── */
 const tCtx = document.getElementById('trend-chart').getContext('2d');
-const _histGrad=(()=>{const g=tCtx.createLinearGradient(0,0,0,130);g.addColorStop(0,'rgba(79,135,255,.2)');g.addColorStop(1,'rgba(79,135,255,0)');return g;})();
+const _histGrad=(()=>{const g=tCtx.createLinearGradient(0,0,0,130);g.addColorStop(0,'rgba(56,189,248,.2)');g.addColorStop(1,'rgba(56,189,248,0)');return g;})();
 const trendChart = new Chart(tCtx, {type:'line',
   data:{labels:[], datasets:[
-    {label:'PM2.5', data:[], borderColor:'#4f87ff', backgroundColor:_histGrad, borderWidth:2.5, pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:'#4f87ff', pointBorderWidth:2.5, tension:.4, fill:true, spanGaps:false},
+    {label:'PM2.5', data:[], borderColor:'#38bdf8', backgroundColor:_histGrad, borderWidth:2.5, pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:'#38bdf8', pointBorderWidth:2.5, tension:.4, fill:true, spanGaps:false},
     {label:'_upper', data:[], borderColor:'transparent', backgroundColor:'rgba(13,188,185,.13)', fill:'+1', pointRadius:0, borderWidth:0, tension:.4, spanGaps:false},
     {label:'_lower', data:[], borderColor:'transparent', fill:false, pointRadius:0, borderWidth:0, tension:.4, spanGaps:false},
     {label:'ทำนาย (OLS)', data:[], borderColor:'#0dbcb9', borderDash:[6,3], borderWidth:2, pointRadius:0, fill:false, tension:.4, spanGaps:false},
@@ -1416,7 +1334,7 @@ const trendChart = new Chart(tCtx, {type:'line',
   options:{responsive:true, maintainAspectRatio:false,
     plugins:{
       legend:{display:true, labels:{filter:item=>!item.text.startsWith('_'), color:tickColor(), font:{size:10}, boxWidth:14, padding:10}},
-      tooltip:{backgroundColor:isDark()?'#1a2540':'#fff', titleColor:isDark()?'#e2e8f0':'#1e293b', bodyColor:'#64748b', borderColor:'#4f87ff', borderWidth:1, padding:10,
+      tooltip:{backgroundColor:isDark()?'#1a2540':'#fff', titleColor:isDark()?'#e2e8f0':'#1e293b', bodyColor:'#64748b', borderColor:'#38bdf8', borderWidth:1, padding:10,
         callbacks:{label:c=>{if(c.dataset.label.startsWith('_'))return null;return `${c.dataset.label}: ${c.parsed.y?.toFixed(1)} µg/m³`;}}
       }
     },
@@ -1431,10 +1349,10 @@ function buildPredHistChart(labels, data){
   document.getElementById('pred-hist-loading').style.display = 'none';
   if(_predHistChart){ _predHistChart.destroy(); _predHistChart = null; }
   const g = canvas.getContext('2d').createLinearGradient(0,0,0,120);
-  g.addColorStop(0,'rgba(79,135,255,.18)'); g.addColorStop(1,'rgba(79,135,255,0)');
+  g.addColorStop(0,'rgba(56,189,248,.18)'); g.addColorStop(1,'rgba(56,189,248,0)');
   _predHistChart = new Chart(canvas, {type:'line',
-    data:{labels, datasets:[{label:'PM2.5 ทำนาย', data, borderColor:'#4f87ff', backgroundColor:g, borderWidth:2, pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:'#4f87ff', pointBorderWidth:2, tension:.4, fill:true}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:isDark()?'#1a2540':'#fff', titleColor:isDark()?'#e2e8f0':'#1e293b', bodyColor:'#64748b', borderColor:'#4f87ff', borderWidth:1, padding:8, callbacks:{label:c=>`ทำนาย: ${c.parsed.y} µg/m³`}}},
+    data:{labels, datasets:[{label:'PM2.5 ทำนาย', data, borderColor:'#38bdf8', backgroundColor:g, borderWidth:2, pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:'#38bdf8', pointBorderWidth:2, tension:.4, fill:true}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:isDark()?'#1a2540':'#fff', titleColor:isDark()?'#e2e8f0':'#1e293b', bodyColor:'#64748b', borderColor:'#38bdf8', borderWidth:1, padding:8, callbacks:{label:c=>`ทำนาย: ${c.parsed.y} µg/m³`}}},
       scales:{y:{grid:{color:gridColor()}, ticks:{color:tickColor(), font:{size:10, family:'DM Mono'}}}, x:{grid:{display:false}, ticks:{color:tickColor(), font:{size:9}, maxTicksLimit:8}}}}});
 }
 
@@ -1591,11 +1509,11 @@ function renderPredictionCard(d){
       <div style="position:relative;height:20px;margin:0 6px">
         <div style="position:absolute;top:50%;left:0;right:0;height:5px;background:var(--border);border-radius:99px;transform:translateY(-50%)"></div>
         <div style="position:absolute;top:50%;left:${bL}%;width:${bW}%;min-width:6px;height:5px;background:${lv.color}40;border:1px solid ${lv.color}55;border-radius:99px;transform:translateY(-50%)"></div>
-        ${curPct !== null ? `<div style="position:absolute;top:50%;left:${curPct}%;transform:translate(-50%,-50%);width:11px;height:11px;border-radius:50%;background:#4f87ff;border:2px solid #fff;box-shadow:0 0 6px rgba(79,135,255,.55);z-index:1"></div>` : ''}
+        ${curPct !== null ? `<div style="position:absolute;top:50%;left:${curPct}%;transform:translate(-50%,-50%);width:11px;height:11px;border-radius:50%;background:#38bdf8;border:2px solid #fff;box-shadow:0 0 6px rgba(56,189,248,.55);z-index:1"></div>` : ''}
         <div style="position:absolute;top:50%;left:${predPct}%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;background:${lv.color};border:2px solid #fff;box-shadow:0 0 8px ${lv.color}88;z-index:2"></div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:.55rem;color:var(--sub);margin-top:6px">
-        ${curPct !== null ? `<span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4f87ff;vertical-align:middle;margin-right:3px"></span>ตอนนี้ ${parseFloat(curPm).toFixed(1)}</span>` : '<span></span>'}
+        ${curPct !== null ? `<span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#38bdf8;vertical-align:middle;margin-right:3px"></span>ตอนนี้ ${parseFloat(curPm).toFixed(1)}</span>` : '<span></span>'}
         <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${lv.color};vertical-align:middle;margin-right:3px"></span><span style="color:${lv.color};font-weight:700">ทำนาย ${predPm.toFixed(1)}</span></span>
       </div>
     </div>`;
@@ -1682,7 +1600,7 @@ function updateWeatherInlineTable(){
   tbody.innerHTML = weatherHist.length === 0
     ? `<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--sub)">ยังไม่มีประวัติ</td></tr>`
     : [...weatherHist].reverse().map(h =>
-        `<tr><td>${h.time}</td><td class="td-val" style="color:#f45b7a">${h.temp.toFixed(1)}</td><td class="td-val" style="color:#8b5cf6">${h.humidity}</td><td class="td-val" style="color:#4f87ff">${h.wind.toFixed(1)}</td><td class="td-val" style="color:#94a3b8">${h.clouds}</td><td style="font-size:.7rem;color:var(--sub)">${h.desc}</td></tr>`
+        `<tr><td>${h.time}</td><td class="td-val" style="color:#f45b7a">${h.temp.toFixed(1)}</td><td class="td-val" style="color:#8b5cf6">${h.humidity}</td><td class="td-val" style="color:#38bdf8">${h.wind.toFixed(1)}</td><td class="td-val" style="color:#94a3b8">${h.clouds}</td><td style="font-size:.7rem;color:var(--sub)">${h.desc}</td></tr>`
       ).join('');
 }
 function renderWeatherInline(){
@@ -1762,7 +1680,7 @@ document.getElementById('btn-allfields').addEventListener('click', () => {
 
   const wrap = document.getElementById('dev-wrap');
   wrap.innerHTML = '';
-  const PALETTE = ['#4f87ff','#db2777','#d97706','#22c55e','#8b5cf6','#f59e0b'];
+  const PALETTE = ['#38bdf8','#8b5cf6','#0dbcb9','#22c55e','#a78bfa','#f59e0b'];
   allDevices.forEach((device, di) => {
     const records = _devAll[device];
     const color   = PALETTE[di % PALETTE.length];
@@ -1821,7 +1739,7 @@ document.getElementById('btn-export-csv').addEventListener('click', () => {
       {icon:'<i class="ti ti-temperature"></i>',  name:'รู้สึกเหมือน', val:_latestWeather.feels.toFixed(1),  unit:'°C',  color:'#fb923c'},
       {icon:'<i class="ti ti-droplet"></i>',      name:'ความชื้น',     val:_latestWeather.humidity,           unit:'%',   color:'#8b5cf6'},
       {icon:'<i class="ti ti-gauge"></i>',        name:'ความดัน',      val:_latestWeather.pressure,           unit:'hPa', color:'#0dbcb9'},
-      {icon:'<i class="ti ti-wind"></i>',         name:'ลม',           val:_latestWeather.wind.toFixed(1),    unit:'m/s', color:'#4f87ff'},
+      {icon:'<i class="ti ti-wind"></i>',         name:'ลม',           val:_latestWeather.wind.toFixed(1),    unit:'m/s', color:'#38bdf8'},
       {icon:'<i class="ti ti-cloud-rain"></i>',   name:'ฝน 1h',        val:_latestWeather.rain.toFixed(1),    unit:'mm',  color:'#60a5fa'},
       {icon:'<i class="ti ti-cloud"></i>',        name:'เมฆ',          val:_latestWeather.clouds,             unit:'%',   color:'#94a3b8'},
     ] : [];
@@ -1845,7 +1763,7 @@ document.getElementById('btn-export-csv').addEventListener('click', () => {
     tbody.innerHTML = weatherHist.length === 0
       ? `<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--sub)">ยังไม่มีประวัติ (อัปเดตทุก 1 ชม.)</td></tr>`
       : [...weatherHist].reverse().map(h =>
-          `<tr><td>${h.time}</td><td class="td-val" style="color:#f45b7a">${h.temp.toFixed(1)}</td><td class="td-val" style="color:#8b5cf6">${h.humidity}</td><td class="td-val" style="color:#4f87ff">${h.wind.toFixed(1)}</td><td class="td-val" style="color:#60a5fa">${h.rain.toFixed(1)}</td><td class="td-val" style="color:#94a3b8">${h.clouds}</td><td style="font-size:.7rem;color:var(--sub)">${h.desc}</td></tr>`
+          `<tr><td>${h.time}</td><td class="td-val" style="color:#f45b7a">${h.temp.toFixed(1)}</td><td class="td-val" style="color:#8b5cf6">${h.humidity}</td><td class="td-val" style="color:#38bdf8">${h.wind.toFixed(1)}</td><td class="td-val" style="color:#60a5fa">${h.rain.toFixed(1)}</td><td class="td-val" style="color:#94a3b8">${h.clouds}</td><td style="font-size:.7rem;color:var(--sub)">${h.desc}</td></tr>`
         ).join('');
     openModal('modal-weather');
   });
@@ -2113,9 +2031,9 @@ function updateWeatherCards(){
         <div style="font-size:.55rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">🌡 สูงสุดวันนี้</div>
         <div style="font-family:'DM Mono',monospace;font-size:1.25rem;font-weight:700;color:#f45b7a">${maxT.toFixed(1)}°</div>
       </div>
-      <div style="text-align:center;background:rgba(79,135,255,.1);border:1.5px solid rgba(79,135,255,.28);border-radius:12px;padding:10px 6px">
+      <div style="text-align:center;background:rgba(56,189,248,.1);border:1.5px solid rgba(56,189,248,.28);border-radius:12px;padding:10px 6px">
         <div style="font-size:.55rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">❄️ ต่ำสุดวันนี้</div>
-        <div style="font-family:'DM Mono',monospace;font-size:1.25rem;font-weight:700;color:#4f87ff">${minT.toFixed(1)}°</div>
+        <div style="font-family:'DM Mono',monospace;font-size:1.25rem;font-weight:700;color:#38bdf8">${minT.toFixed(1)}°</div>
       </div>
       ${fcHtml1}${fcHtml2}
     </div>
