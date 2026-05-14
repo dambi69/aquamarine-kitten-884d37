@@ -84,6 +84,30 @@ COL_ALIASES: dict[str, list[str]] = {
     # timestamp/datetime are parsed separately — do NOT include here
 }
 
+FEATURE_IMP_PATH = '/ai_analysis/feature_importance'
+
+FEATURE_LABEL: dict[str, str] = {
+    'pm1': 'PM1 ปัจจุบัน', 'pm2_5': 'PM2.5 ปัจจุบัน', 'pm10': 'PM10 ปัจจุบัน',
+    'temperature': 'อุณหภูมิ', 'humidity': 'ความชื้น',
+    'pm1_lag1': 'PM1 รอบก่อน',      'pm2_5_lag1': 'PM2.5 รอบก่อน',      'pm10_lag1': 'PM10 รอบก่อน',
+    'pm1_lag2': 'PM1 2 รอบก่อน',    'pm2_5_lag2': 'PM2.5 2 รอบก่อน',    'pm10_lag2': 'PM10 2 รอบก่อน',
+    'pm1_lag3': 'PM1 3 รอบก่อน',    'pm2_5_lag3': 'PM2.5 3 รอบก่อน',    'pm10_lag3': 'PM10 3 รอบก่อน',
+    'temperature_lag1': 'อุณหภูมิรอบก่อน',  'humidity_lag1': 'ความชื้นรอบก่อน',
+    'temperature_lag2': 'อุณหภูมิ 2 รอบก่อน', 'humidity_lag2': 'ความชื้น 2 รอบก่อน',
+    'pm2_5_rmean3': 'ค่าเฉลี่ย PM2.5 (3)',  'pm2_5_rmean6': 'ค่าเฉลี่ย PM2.5 (6)',
+    'pm2_5_rmean12': 'ค่าเฉลี่ย PM2.5 (12)',
+    'pm10_rmean3': 'ค่าเฉลี่ย PM10 (3)',    'pm1_rmean3': 'ค่าเฉลี่ย PM1 (3)',
+    'pm2_5_rstd3': 'ความผันผวน PM2.5 (3)', 'pm2_5_rmax3': 'PM2.5 สูงสุด (3)',
+    'hour': 'ชั่วโมงของวัน',  'day_of_week': 'วันในสัปดาห์', 'month': 'เดือน',
+    'is_rush': 'ชั่วโมงเร่งด่วน', 'is_night': 'กลางคืน',
+    'sin_hour': 'รอบเวลา (sin)',  'cos_hour': 'รอบเวลา (cos)',
+    'sin_dow': 'รอบสัปดาห์ (sin)', 'cos_dow': 'รอบสัปดาห์ (cos)',
+    'pm_ratio': 'สัดส่วน PM2.5/PM10', 'pm1_pm25_r': 'สัดส่วน PM1/PM2.5',
+    'aqi_approx': 'ค่า AQI ประมาณ',   'temp_x_hum': 'อุณหภูมิ × ความชื้น',
+    'pm2_5_d1': 'การเปลี่ยน PM2.5 (1 รอบ)', 'pm10_d1': 'การเปลี่ยน PM10',
+    'pm1_d1': 'การเปลี่ยน PM1',
+}
+
 # Possible names for the timestamp column in Firebase
 TS_CANDIDATES = ['timestamp', 'time', 'ts', 'Timestamp', 'Time', 'datetime', 'Datetime']
 
@@ -390,9 +414,7 @@ def train_all_devices(device_dfs: dict) -> tuple[dict, dict, dict]:
             model.fit(X, y)
 
             if use_xgb:
-                imps = np.mean([e.feature_importances_ for e in model.estimators_], axis=0)
-                top5 = sorted(zip(f_cols, imps), key=lambda x: -x[1])[:5]
-                log.info(f"  {device}: top-5 features = {[t[0] for t in top5]}")
+                write_feature_importance(device, model, f_cols)
 
             perf = (mean_r2, mean_mae)
 
@@ -473,6 +495,23 @@ def classify_aqi(pm25: float) -> dict:
     elif pm25 <= 150.4: return {'level': 4, 'label': 'มีผลต่อสุขภาพ', 'color': '#ea580c'}
     elif pm25 <= 250.4: return {'level': 5, 'label': 'อันตราย',        'color': '#dc2626'}
     else              : return {'level': 6, 'label': 'อันตรายมาก',     'color': '#7c3aed'}
+
+# ── Feature importance ────────────────────────────────────────────────────────
+def write_feature_importance(device: str, model: MultiOutputRegressor, f_cols: list[str]) -> None:
+    try:
+        imps = np.mean([e.feature_importances_ for e in model.estimators_], axis=0)
+        pairs = sorted(zip(f_cols, imps), key=lambda x: -x[1])[:10]
+        top10 = [
+            {'feature': f, 'importance': round(float(imp), 4), 'label': FEATURE_LABEL.get(f, f)}
+            for f, imp in pairs
+        ]
+        _fb_set(f'{FEATURE_IMP_PATH}/{device}', {
+            'features': top10,
+            'updated_at': int(time.time()),
+        })
+        log.info(f"  {device}: wrote feature importance (top {len(top10)})")
+    except Exception as exc:
+        log.warning(f"write_feature_importance [{device}]: {exc}")
 
 # ── Upload to Firebase ────────────────────────────────────────────────────────
 def upload_result(preds: np.ndarray, metrics_dict: dict, per_device: dict) -> dict:
