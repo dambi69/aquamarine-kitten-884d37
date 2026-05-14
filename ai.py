@@ -16,6 +16,8 @@ import warnings
 from datetime import datetime
 from pathlib import Path
 
+import requests
+
 import firebase_admin
 from firebase_admin import credentials, db
 import numpy as np
@@ -91,6 +93,13 @@ ANOMALY_Z_THRESH = 3.0
 ANOMALY_MIN_STD  = 1.0
 ANOMALY_ROLL_WIN = 20
 ANOMALY_KEEP     = 50
+
+LINE_PUSH_URL         = 'https://api.line.me/v2/bot/message/push'
+NOTIFY_CONFIG_PATH    = '/settings/notify_config'
+NOTIFY_COOLDOWN       = 1800   # 30 min between threshold alerts
+ANOMALY_NOTIFY_CD     = 900    # 15 min between anomaly alerts per device
+
+_last_notify_ts: dict[str, float] = {}
 
 FEATURE_LABEL: dict[str, str] = {
     # ── Raw base values (used in display, not direct feature_names entries for PM) ──
@@ -657,6 +666,69 @@ def write_anomalies(anomalies: list[dict]) -> None:
         log.warning(f"write_anomalies trim: {exc}")
 
 
+def _line_push(token: str, user_id: str, text: str) -> bool:
+    try:
+        resp = requests.post(
+            LINE_PUSH_URL,
+            headers={
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/json',
+            },
+            json={'to': user_id, 'messages': [{'type': 'text', 'text': text}]},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            log.info("Line push OK")
+            return True
+        log.warning(f"Line push HTTP {resp.status_code}: {resp.text[:200]}")
+        return False
+    except Exception as exc:
+        log.warning(f"Line push error: {exc}")
+        return False
+
+
+def check_and_notify(preds: np.ndarray, aqi: dict, anomalies: list[dict]) -> None:
+    try:
+        config = db.reference(NOTIFY_CONFIG_PATH).get() or {}
+    except Exception as exc:
+        log.warning(f"check_and_notify config read error: {exc}")
+        return
+
+    token     = str(config.get('line_channel_token', '')).strip()
+    user_id   = str(config.get('line_user_id', '')).strip()
+    threshold = float(config.get('threshold_pm25', 50))
+    subscriptions = config.get('push_subscriptions') or {}
+
+    if not token or not user_id:
+        return
+
+    now  = time.time()
+    pm25 = float(preds[1])
+
+    if pm25 > threshold and (now - _last_notify_ts.get('threshold', 0)) >= NOTIFY_COOLDOWN:
+        msg = (
+            f"🚨 SmartAir แจ้งเตือน\n"
+            f"PM2.5 = {pm25:.1f} µg/m³\n"
+            f"AQI: {aqi['label']}\n"
+            f"เกินค่าที่ตั้งไว้ ({threshold:.0f} µg/m³)"
+        )
+        if _line_push(token, user_id, msg):
+            _last_notify_ts['threshold'] = now
+
+    for evt in anomalies:
+        dev  = evt['device']
+        key  = f'anomaly_{dev}'
+        if (now - _last_notify_ts.get(key, 0)) >= ANOMALY_NOTIFY_CD:
+            direction = '⬆️ พุ่งสูง' if evt['type'] == 'spike' else '⬇️ ลดฮวบ'
+            msg = (
+                f"⚠️ SmartAir ตรวจพบค่าผิดปกติ\n"
+                f"{dev}: PM2.5 {direction}\n"
+                f"ค่า: {evt['pm2_5']} µg/m³ (Z={evt['z_score']:+.1f})"
+            )
+            if _line_push(token, user_id, msg):
+                _last_notify_ts[key] = now
+
+
 # ── Upload to Firebase ────────────────────────────────────────────────────────
 def upload_result(preds: np.ndarray, metrics_dict: dict, per_device: dict) -> dict:
     ts  = int(time.time())
@@ -757,6 +829,7 @@ def main():
                         log.info(f"         AQI={aqi['label']}  R^2={avg_r2*100:.1f}%  MAE={avg_mae:.2f} ug/m3")
 
                         upload_result(preds, metrics_dict, per_device)
+                        check_and_notify(preds, aqi, anomalies)
                     else:
                         # Models may be stale/incompatible — force retrain next cycle
                         log.warning("Prediction failed — forcing retrain on next cycle")
