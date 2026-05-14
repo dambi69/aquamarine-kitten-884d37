@@ -500,6 +500,16 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 .acc-body { overflow:hidden; max-height:0; transition:max-height .38s cubic-bezier(.16,1,.3,1); background:var(--glass); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-top:none; border-radius:0 0 20px 20px; box-shadow:var(--glass-shadow); }
 .acc-wrap.is-open .acc-body { max-height:520px; }
 .acc-inner { padding:12px 16px 14px; }
+
+/* ── Feature Importance ── */
+.feat-imp-card { background:var(--glass); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-radius:20px; padding:16px; margin-bottom:10px; box-shadow:var(--glass-shadow); }
+.feat-imp-title { font-size:.76rem; font-weight:700; color:var(--sub); margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+.feat-imp-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.feat-imp-label { font-size:.68rem; color:var(--text); font-weight:500; min-width:140px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.feat-imp-bar-bg { flex:1; height:8px; background:var(--border); border-radius:99px; overflow:hidden; }
+.feat-imp-bar { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--mint),var(--sky)); transition:width .6s cubic-bezier(.34,1.56,.64,1); }
+.feat-imp-pct { font-family:'DM Mono',monospace; font-size:.65rem; color:var(--sub); min-width:36px; text-align:right; }
+.feat-imp-updated { font-size:.6rem; color:var(--sub); margin-top:8px; text-align:right; }
 </style>
 </head>
 <body>
@@ -839,6 +849,19 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
         <div class="tl-item"><div class="tl-dot" style="background:#7c2d12"></div>อันตราย (&gt;90)</div>
       </div>
     </div>
+
+    <!-- Feature Importance card -->
+    <div class="feat-imp-card fade" id="feat-imp-card" style="animation-delay:.12s">
+      <div class="feat-imp-title">
+        <i class="ti ti-bulb" style="color:var(--amber)"></i>
+        <span>ปัจจัยที่ AI ใช้พยากรณ์</span>
+        <span style="margin-left:auto;font-size:.6rem;font-weight:400;color:var(--sub)" id="feat-imp-device-label"></span>
+      </div>
+      <div id="feat-imp-rows">
+        <div style="text-align:center;color:var(--sub);font-size:.72rem;padding:12px 0">รอข้อมูล...</div>
+      </div>
+      <div class="feat-imp-updated" id="feat-imp-updated"></div>
+    </div>
   </section>
 
   <!-- ── Tab: อากาศ ── -->
@@ -1024,6 +1047,7 @@ const FB = {
 const OWM_KEY = "59189cf1cdebec85d5066055198ea3aa";
 const LAT = 13.6512, LON = 100.4964;
 const fbDb = getDatabase(initializeApp(FB));
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 
 /* ── Device metadata ── */
 const DEVICE_INFO = {
@@ -1429,6 +1453,7 @@ function renderActiveDevice(){
 
 /* ── Device tab switching ── */
 function switchDevice(device){
+  subscribeFeatImp(device);
   _activeDevice = device;
   document.querySelectorAll('.dev-tab').forEach(b => { b.classList.toggle('active', b.dataset.device===device); });
   document.querySelectorAll('.sensor-card').forEach(c => { c.classList.toggle('sc-active', c.dataset.device===device); });
@@ -1453,6 +1478,61 @@ onValue(ref(fbDb, '/ai_analysis/prediction'), snap => {
   _latestPrediction = d;
   renderPredictionCard(d);
 });
+
+// ── Feature Importance ───────────────────────────────────────
+let _featImpUnsub = null;
+
+function subscribeFeatImp(device) {
+  if (_featImpUnsub) { _featImpUnsub(); _featImpUnsub = null; }
+  _featImpUnsub = onValue(ref(fbDb, '/ai_analysis/feature_importance/' + device), snap => {
+    const data      = snap.val();
+    const container = document.getElementById('feat-imp-rows');
+    const updEl     = document.getElementById('feat-imp-updated');
+    const lblEl     = document.getElementById('feat-imp-device-label');
+
+    if (!data || !Array.isArray(data.features) || data.features.length === 0) {
+      container.textContent = 'ไม่มีข้อมูล (Ridge model หรือยังไม่ได้เทรน)';
+      return;
+    }
+    lblEl.textContent = device;
+    const maxImp = data.features[0].importance || 1;
+    // Safe clear: no untrusted content, DOM nodes built below via createElement+textContent
+    container.replaceChildren();
+    data.features.forEach(f => {
+      const pct    = ((f.importance / maxImp) * 100).toFixed(1);
+      const valPct = (f.importance * 100).toFixed(1);
+
+      const row   = document.createElement('div');
+      row.className = 'feat-imp-row';
+
+      const lbl   = document.createElement('div');
+      lbl.className = 'feat-imp-label';
+      lbl.title   = String(f.feature || '');
+      lbl.textContent = String(f.label || f.feature || '');
+
+      const barBg = document.createElement('div');
+      barBg.className = 'feat-imp-bar-bg';
+      const bar   = document.createElement('div');
+      bar.className = 'feat-imp-bar';
+      bar.style.width = pct + '%';
+      barBg.appendChild(bar);
+
+      const pctEl = document.createElement('div');
+      pctEl.className = 'feat-imp-pct';
+      pctEl.textContent = valPct + '%';
+
+      row.appendChild(lbl);
+      row.appendChild(barBg);
+      row.appendChild(pctEl);
+      container.appendChild(row);
+    });
+
+    if (data.updated_at) {
+      updEl.textContent = 'อัปเดต: ' + new Date(data.updated_at * 1000).toLocaleString('th-TH');
+    }
+  });
+}
+subscribeFeatImp('device1');
 
 function _calcTrend(recs) {
   if (!recs || recs.length < 2) return null;
