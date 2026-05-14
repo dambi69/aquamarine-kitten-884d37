@@ -33,3 +33,21 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(r => r || fetch(e.request))
   );
 });
+
+self.addEventListener('push', e => {
+  const data = e.data ? e.data.json() : {};
+  e.waitUntil(
+    self.registration.showNotification(data.title || 'SmartAir Alert', {
+      body    : data.body || 'ตรวจพบค่าผิดปกติ',
+      icon    : './icon-192.svg',
+      badge   : './icon-192.svg',
+      tag     : 'smartair-alert',
+      renotify: true,
+    })
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.openWindow('./'));
+});

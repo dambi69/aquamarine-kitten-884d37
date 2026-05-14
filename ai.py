@@ -724,6 +724,7 @@ def check_and_notify(preds: np.ndarray, aqi: dict, anomalies: list[dict]) -> Non
         )
         if _line_push(token, user_id, msg):
             _last_notify_ts['threshold'] = now
+        send_web_push('SmartAir Alert', f'PM2.5 = {pm25:.1f} µg/m³ (เกิน {threshold:.0f})', subscriptions)
 
     for evt in anomalies:
         dev  = evt['device']
@@ -737,6 +738,48 @@ def check_and_notify(preds: np.ndarray, aqi: dict, anomalies: list[dict]) -> Non
             )
             if _line_push(token, user_id, msg):
                 _last_notify_ts[key] = now
+            send_web_push(f'SmartAir: {dev}', f'PM2.5 {evt["pm2_5"]} µg/m³ (Z={evt["z_score"]:+.1f})', subscriptions)
+
+
+def send_web_push(title: str, body: str, subscriptions: dict) -> None:
+    priv_key = os.getenv('VAPID_PRIVATE_KEY', '')
+    pub_key  = os.getenv('VAPID_PUBLIC_KEY', '')
+    email    = os.getenv('VAPID_CLAIMS_EMAIL', 'mailto:admin@example.com')
+    if not priv_key or not pub_key or not subscriptions:
+        return
+    try:
+        from pywebpush import webpush, WebPushException
+    except ImportError:
+        log.warning("pywebpush not installed — skipping Web Push")
+        return
+
+    import json as _json
+    payload  = _json.dumps({'title': title, 'body': body})
+    dead_ids = []
+
+    for sub_id, sub_data in subscriptions.items():
+        if not isinstance(sub_data, dict):
+            continue
+        try:
+            webpush(
+                subscription_info=sub_data,
+                data=payload,
+                vapid_private_key=priv_key,
+                vapid_claims={'sub': email},
+            )
+            log.info(f"Web Push sent to {sub_id[:8]}…")
+        except Exception as exc:
+            if hasattr(exc, 'response') and exc.response is not None and exc.response.status_code == 410:
+                dead_ids.append(sub_id)
+            else:
+                log.warning(f"Web Push [{sub_id[:8]}]: {exc}")
+
+    for sub_id in dead_ids:
+        try:
+            db.reference(f'{NOTIFY_CONFIG_PATH}/push_subscriptions/{sub_id}').delete()
+            log.info(f"Removed expired push subscription {sub_id[:8]}")
+        except Exception:
+            pass
 
 
 # ── Upload to Firebase ────────────────────────────────────────────────────────

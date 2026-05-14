@@ -1112,6 +1112,14 @@ const FB = {
 const OWM_KEY = "59189cf1cdebec85d5066055198ea3aa";
 const LAT = 13.6512, LON = 100.4964;
 const fbDb = getDatabase(initializeApp(FB));
+const VAPID_PUBLIC_KEY = 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY';
+
+function _b64ToUint8(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
 function esc(s) { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 
 /* ── Device metadata ── */
@@ -1242,10 +1250,34 @@ window.saveLineConfig = async function () {
   } catch (e) { alert('บันทึกไม่สำเร็จ: ' + e.message); }
 };
 
-window.togglePush = function(enabled) {
-  document.getElementById('push-status').textContent = enabled
-    ? 'ยังไม่ได้ตั้งค่า VAPID key (Task 8)'
-    : 'ปิด Browser Push';
+window.togglePush = async function(enabled) {
+  const statusEl = document.getElementById('push-status');
+  if (!enabled) { statusEl.textContent = 'ปิด Browser Push แล้ว'; return; }
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    statusEl.textContent = 'Browser ไม่รองรับ Push Notification';
+    document.getElementById('push-toggle').checked = false;
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') {
+    statusEl.textContent = 'ไม่ได้รับอนุญาต — กรุณาอนุญาตใน browser settings';
+    document.getElementById('push-toggle').checked = false;
+    return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: _b64ToUint8(VAPID_PUBLIC_KEY),
+    });
+    const subJSON = JSON.parse(JSON.stringify(sub));
+    const id = btoa(subJSON.endpoint).replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
+    await set(ref(fbDb, '/settings/notify_config/push_subscriptions/' + id), subJSON);
+    statusEl.textContent = 'เปิดใช้งาน Browser Push แล้ว';
+  } catch(e) {
+    statusEl.textContent = 'เกิดข้อผิดพลาด: ' + e.message;
+    document.getElementById('push-toggle').checked = false;
+  }
 };
 
 // Pre-fill saved values on load
