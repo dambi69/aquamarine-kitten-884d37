@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 AI DUST PREDICTOR v4
 - XGBoost (primary) + Ridge regression (fallback for small datasets)
@@ -688,15 +689,24 @@ def _line_push(token: str, user_id: str, text: str) -> bool:
 
 
 def check_and_notify(preds: np.ndarray, aqi: dict, anomalies: list[dict]) -> None:
-    try:
-        config = db.reference(NOTIFY_CONFIG_PATH).get() or {}
-    except Exception as exc:
-        log.warning(f"check_and_notify config read error: {exc}")
-        return
+    config = {}
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            config = db.reference(NOTIFY_CONFIG_PATH).get() or {}
+            break
+        except Exception as exc:
+            log.warning(f"check_and_notify config read attempt {attempt}/{MAX_RETRIES}: {exc}")
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY)
+            else:
+                return
 
     token     = str(config.get('line_channel_token', '')).strip()
     user_id   = str(config.get('line_user_id', '')).strip()
-    threshold = float(config.get('threshold_pm25', 50))
+    try:
+        threshold = float(config.get('threshold_pm25', 50))
+    except (TypeError, ValueError):
+        threshold = 50.0
     subscriptions = config.get('push_subscriptions') or {}
 
     if not token or not user_id:
