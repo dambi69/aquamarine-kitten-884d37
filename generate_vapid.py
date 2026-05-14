@@ -1,7 +1,12 @@
 """Run once to generate VAPID keys. Copy output into Railway environment variables."""
-import base64
-from py_vapid import Vapid
-from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+try:
+    import base64
+    from py_vapid import Vapid
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+except ImportError as e:
+    print(f"Missing dependency: {e}")
+    print("Fix: pip install -r requirements.txt")
+    raise SystemExit(1)
 
 v = Vapid()
 v.generate_keys()
