@@ -86,6 +86,12 @@ COL_ALIASES: dict[str, list[str]] = {
 
 FEATURE_IMP_PATH = '/ai_analysis/feature_importance'
 
+ANOMALY_PATH     = '/ai_analysis/anomalies'
+ANOMALY_Z_THRESH = 3.0
+ANOMALY_MIN_STD  = 1.0
+ANOMALY_ROLL_WIN = 20
+ANOMALY_KEEP     = 50
+
 FEATURE_LABEL: dict[str, str] = {
     # ── Raw base values (used in display, not direct feature_names entries for PM) ──
     'pm1'        : 'PM1 ปัจจุบัน',
@@ -605,6 +611,52 @@ def write_feature_importance(device: str, model: MultiOutputRegressor, f_cols: l
     except Exception as exc:
         log.warning(f"write_feature_importance [{device}]: {exc}")
 
+def detect_anomalies(device_dfs: dict) -> list[dict]:
+    anomalies = []
+    now = int(time.time())
+    for device, df in device_dfs.items():
+        if len(df) < ANOMALY_ROLL_WIN + 1:
+            continue
+        pm     = df['pm2_5'].values
+        window = pm[-(ANOMALY_ROLL_WIN + 1):-1]
+        mu     = float(window.mean())
+        sigma  = float(window.std())
+        latest = float(pm[-1])
+        if sigma < ANOMALY_MIN_STD:
+            continue
+        z = (latest - mu) / sigma
+        if abs(z) < ANOMALY_Z_THRESH:
+            continue
+        anomalies.append({
+            'device'      : device,
+            'pm2_5'       : round(latest, 2),
+            'z_score'     : round(z, 2),
+            'type'        : 'spike' if z > 0 else 'drop',
+            'timestamp'   : now,
+            'datetime_str': datetime.fromtimestamp(now).strftime('%Y-%m-%d %H:%M:%S'),
+        })
+    return anomalies
+
+
+def write_anomalies(anomalies: list[dict]) -> None:
+    for evt in anomalies:
+        key = f"{evt['timestamp']}_{evt['device']}"
+        _fb_set(f'{ANOMALY_PATH}/{key}', evt)
+        log.warning(
+            f"ANOMALY [{evt['device']}] PM2.5={evt['pm2_5']} "
+            f"z={evt['z_score']:+.2f} type={evt['type']}"
+        )
+    # Trim old entries, keep ANOMALY_KEEP most recent
+    try:
+        existing = db.reference(ANOMALY_PATH).order_by_key().get() or {}
+        if isinstance(existing, dict) and len(existing) > ANOMALY_KEEP:
+            to_del = sorted(existing.keys())[:len(existing) - ANOMALY_KEEP]
+            for k in to_del:
+                db.reference(f'{ANOMALY_PATH}/{k}').delete()
+    except Exception as exc:
+        log.warning(f"write_anomalies trim: {exc}")
+
+
 # ── Upload to Firebase ────────────────────────────────────────────────────────
 def upload_result(preds: np.ndarray, metrics_dict: dict, per_device: dict) -> dict:
     ts  = int(time.time())
@@ -668,12 +720,18 @@ def main():
             log.info(f"──── Cycle {cycle}  [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ────")
 
             try:
+                anomalies = []
                 device_dfs = fetch_all_devices()
                 if not device_dfs:
                     log.warning(f"No device data — retrying in {LOOP_INTERVAL}s")
                     consecutive_errors += 1
                     time.sleep(LOOP_INTERVAL)
                     continue
+
+                # Detect and persist anomalies before training
+                anomalies = detect_anomalies(device_dfs)
+                if anomalies:
+                    write_anomalies(anomalies)
 
                 # Train or retrain
                 if not models or _should_retrain(cycle, metrics_dict):
