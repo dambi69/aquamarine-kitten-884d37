@@ -550,7 +550,7 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
     <div class="header-top">
       <div class="logo">
         <div class="logo-icon" style="position:relative">🌿
-            <div class="anomaly-badge" id="anomaly-badge">!</div>
+            <div class="anomaly-badge" id="anomaly-badge"></div>
           </div>
         <div>
           <div class="logo-text">SmartAir</div>
@@ -1588,16 +1588,27 @@ onValue(query(ref(fbDb, '/ai_analysis/anomalies'), limitToLast(50)), snap => {
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 10);
 
+  if (events.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;color:var(--sub);font-size:.72rem;padding:12px 0';
+    empty.textContent = 'ไม่มีเหตุผิดปกติล่าสุด';
+    listEl.appendChild(empty);
+    badge.classList.remove('show');
+    countLbl.textContent = '';
+    return;
+  }
+
   const nowS    = Date.now() / 1000;
   const recent  = events.filter(e => (nowS - e.timestamp) < 3600);
 
   // Badge
   if (recent.length > 0) {
     badge.textContent = recent.length > 9 ? '9+' : String(recent.length);
-    badge.classList.add('show');
+    badge.classList.remove('show');
+    requestAnimationFrame(() => badge.classList.add('show'));
     // Toast for anomaly within last 5 min
     const newest = events[0];
-    if (newest && (nowS - newest.timestamp) < 300) {
+    if (newest && (nowS - newest.timestamp) < 300 && alertEnabled && !alertDismissed) {
       const dir = newest.type === 'spike' ? 'พุ่งสูง' : 'ลดฮวบ';
       document.getElementById('alert-text').textContent =
         (newest.device || '?') + ': PM2.5 ' + dir + ' ' + newest.pm2_5 + ' µg/m³ (Z=' + newest.z_score + ')';
@@ -1608,7 +1619,9 @@ onValue(query(ref(fbDb, '/ai_analysis/anomalies'), limitToLast(50)), snap => {
   } else {
     badge.classList.remove('show');
   }
-  countLbl.textContent = events.length + ' รายการ';
+  countLbl.textContent = recent.length > 0
+    ? recent.length + ' รายการ (1 ชม.)'
+    : events.length + ' รายการ (ทั้งหมด)';
 
   events.forEach(e => {
     const item = document.createElement('div');
