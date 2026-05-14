@@ -17,6 +17,7 @@ import warnings
 from datetime import datetime
 from pathlib import Path
 
+import json
 import requests
 
 import firebase_admin
@@ -688,6 +689,46 @@ def _line_push(token: str, user_id: str, text: str) -> bool:
         return False
 
 
+def send_web_push(title: str, body: str, subscriptions: dict) -> None:
+    priv_key = os.getenv('VAPID_PRIVATE_KEY', '')
+    pub_key  = os.getenv('VAPID_PUBLIC_KEY', '')
+    email    = os.getenv('VAPID_CLAIMS_EMAIL', 'mailto:admin@example.com')
+    if not priv_key or not pub_key or not subscriptions:
+        return
+    try:
+        from pywebpush import webpush, WebPushException
+    except ImportError:
+        log.warning("pywebpush not installed — skipping Web Push")
+        return
+
+    payload = json.dumps({'title': title, 'body': body})
+    dead_ids = []
+
+    for sub_id, sub_data in subscriptions.items():
+        if not isinstance(sub_data, dict):
+            continue
+        try:
+            webpush(
+                subscription_info=sub_data,
+                data=payload,
+                vapid_private_key=priv_key,
+                vapid_claims={'sub': email},
+            )
+            log.info(f"Web Push sent to {sub_id[:8]}…")
+        except Exception as exc:
+            if hasattr(exc, 'response') and exc.response is not None and exc.response.status_code == 410:
+                dead_ids.append(sub_id)
+            else:
+                log.warning(f"Web Push [{sub_id[:8]}]: {exc}")
+
+    for sub_id in dead_ids:
+        try:
+            db.reference(f'{NOTIFY_CONFIG_PATH}/push_subscriptions/{sub_id}').delete()
+            log.info(f"Removed expired push subscription {sub_id[:8]}")
+        except Exception:
+            pass
+
+
 def check_and_notify(preds: np.ndarray, aqi: dict, anomalies: list[dict]) -> None:
     config = {}
     for attempt in range(1, MAX_RETRIES + 1):
@@ -716,70 +757,29 @@ def check_and_notify(preds: np.ndarray, aqi: dict, anomalies: list[dict]) -> Non
     pm25 = float(preds[1])
 
     if pm25 > threshold and (now - _last_notify_ts.get('threshold', 0)) >= NOTIFY_COOLDOWN:
+        _last_notify_ts['threshold'] = now
         msg = (
             f"🚨 SmartAir แจ้งเตือน\n"
             f"PM2.5 = {pm25:.1f} µg/m³\n"
             f"AQI: {aqi['label']}\n"
             f"เกินค่าที่ตั้งไว้ ({threshold:.0f} µg/m³)"
         )
-        if _line_push(token, user_id, msg):
-            _last_notify_ts['threshold'] = now
+        _line_push(token, user_id, msg)
         send_web_push('SmartAir Alert', f'PM2.5 = {pm25:.1f} µg/m³ (เกิน {threshold:.0f})', subscriptions)
 
     for evt in anomalies:
         dev  = evt['device']
         key  = f'anomaly_{dev}'
         if (now - _last_notify_ts.get(key, 0)) >= ANOMALY_NOTIFY_CD:
+            _last_notify_ts[key] = now
             direction = '⬆️ พุ่งสูง' if evt['type'] == 'spike' else '⬇️ ลดฮวบ'
             msg = (
                 f"⚠️ SmartAir ตรวจพบค่าผิดปกติ\n"
                 f"{dev}: PM2.5 {direction}\n"
                 f"ค่า: {evt['pm2_5']} µg/m³ (Z={evt['z_score']:+.1f})"
             )
-            if _line_push(token, user_id, msg):
-                _last_notify_ts[key] = now
+            _line_push(token, user_id, msg)
             send_web_push(f'SmartAir: {dev}', f'PM2.5 {evt["pm2_5"]} µg/m³ (Z={evt["z_score"]:+.1f})', subscriptions)
-
-
-def send_web_push(title: str, body: str, subscriptions: dict) -> None:
-    priv_key = os.getenv('VAPID_PRIVATE_KEY', '')
-    pub_key  = os.getenv('VAPID_PUBLIC_KEY', '')
-    email    = os.getenv('VAPID_CLAIMS_EMAIL', 'mailto:admin@example.com')
-    if not priv_key or not pub_key or not subscriptions:
-        return
-    try:
-        from pywebpush import webpush, WebPushException
-    except ImportError:
-        log.warning("pywebpush not installed — skipping Web Push")
-        return
-
-    import json as _json
-    payload  = _json.dumps({'title': title, 'body': body})
-    dead_ids = []
-
-    for sub_id, sub_data in subscriptions.items():
-        if not isinstance(sub_data, dict):
-            continue
-        try:
-            webpush(
-                subscription_info=sub_data,
-                data=payload,
-                vapid_private_key=priv_key,
-                vapid_claims={'sub': email},
-            )
-            log.info(f"Web Push sent to {sub_id[:8]}…")
-        except Exception as exc:
-            if hasattr(exc, 'response') and exc.response is not None and exc.response.status_code == 410:
-                dead_ids.append(sub_id)
-            else:
-                log.warning(f"Web Push [{sub_id[:8]}]: {exc}")
-
-    for sub_id in dead_ids:
-        try:
-            db.reference(f'{NOTIFY_CONFIG_PATH}/push_subscriptions/{sub_id}').delete()
-            log.info(f"Removed expired push subscription {sub_id[:8]}")
-        except Exception:
-            pass
 
 
 # ── Upload to Firebase ────────────────────────────────────────────────────────
