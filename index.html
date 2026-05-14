@@ -528,6 +528,14 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 .anomaly-device { font-size:.7rem; font-weight:700; color:var(--text); }
 .anomaly-meta { font-size:.62rem; color:var(--sub); margin-top:1px; }
 .anomaly-val { font-family:'DM Mono',monospace; font-size:.8rem; font-weight:600; color:var(--text); text-align:right; flex-shrink:0; }
+
+/* ── Settings input fields ── */
+.setting-input { width:100%; border:1px solid var(--border); border-radius:10px; padding:9px 12px; font-size:.78rem; font-family:'Nunito','Sarabun',sans-serif; background:var(--raised); color:var(--text); margin-top:6px; outline:none; transition:border-color .2s; box-sizing:border-box; }
+.setting-input:focus { border-color:var(--mint); }
+.setting-input-label { font-size:.72rem; font-weight:600; color:var(--text); margin-top:10px; display:block; }
+.setting-save-btn { margin-top:10px; width:100%; padding:10px; border-radius:12px; background:var(--mint); color:#fff; font-size:.82rem; font-weight:700; border:none; cursor:pointer; font-family:'Nunito','Sarabun',sans-serif; transition:background .2s; }
+.setting-save-btn:hover { background:var(--sky); }
+.setting-save-ok { display:none; font-size:.7rem; color:var(--mint); text-align:center; margin-top:6px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -980,6 +988,33 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
     </div>
     <div class="settings-section">
       <div class="settings-card">
+        <div class="settings-title"><i class="ti ti-brand-line"></i> Line Messaging</div>
+        <p style="font-size:.72rem;color:var(--sub);margin-bottom:10px;line-height:1.5">ต้องการ <b>Channel Access Token</b> และ <b>User ID</b> จาก Line Developers Console</p>
+        <label class="setting-input-label" for="line-token-input">Channel Access Token</label>
+        <input class="setting-input" type="password" id="line-token-input" placeholder="xxxxxxxxxx...">
+        <label class="setting-input-label" for="line-uid-input">User ID ผู้รับ (Uxxxxxxx...)</label>
+        <input class="setting-input" type="text" id="line-uid-input" placeholder="Uxxxxxxxxxxxxxxxxx">
+        <label class="setting-input-label" for="line-threshold-input">แจ้งเตือนเมื่อ PM2.5 เกิน (µg/m³)</label>
+        <input class="setting-input" type="number" id="line-threshold-input" min="10" max="300" value="50">
+        <button class="setting-save-btn" onclick="saveLineConfig()">บันทึกการตั้งค่า Line</button>
+        <div class="setting-save-ok" id="line-save-ok">✓ บันทึกแล้ว</div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-card">
+        <div class="settings-title"><i class="ti ti-bell-ringing-2"></i> Browser Push Notification</div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">เปิด Browser Push</div>
+            <div class="setting-desc">แจ้งเตือนผ่าน browser แม้ปิดแอพอยู่ (ต้องอนุญาตใน browser)</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="push-toggle" onchange="togglePush(this.checked)"><span class="slider"></span></label>
+        </div>
+        <div style="font-size:.65rem;color:var(--sub);margin-top:6px" id="push-status">ยังไม่ได้เปิดใช้งาน</div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-card">
         <div class="settings-title"><i class="ti ti-palette"></i> การแสดงผล</div>
         <div class="setting-row">
           <div class="setting-info"><div class="setting-name">Dark Mode</div><div class="setting-desc">เปลี่ยนธีมเป็นโหมดมืด</div></div>
@@ -1062,7 +1097,7 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getDatabase, ref, onValue, query, limitToLast }
+import { getDatabase, ref, onValue, query, limitToLast, set, get }
   from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
 /* ── Config ── */
@@ -1178,11 +1213,41 @@ function updateSliderFill(){
   alertThreshold = parseInt(slider.value);
 }
 slider.addEventListener('input', () => { updateSliderFill(); alertDismissed = false; });
+slider.addEventListener('change', () => {
+  set(ref(fbDb, '/settings/notify_config/threshold_pm25'), parseInt(slider.value, 10)).catch(() => {});
+});
 updateSliderFill();
 document.getElementById('alert-enabled').addEventListener('change', e => {
   alertEnabled = e.target.checked;
   if(!alertEnabled) dismissAlert();
 });
+
+// ── Line / Push config ────────────────────────────────────────
+const _notifyRef = ref(fbDb, '/settings/notify_config');
+
+window.saveLineConfig = async function () {
+  const token     = document.getElementById('line-token-input').value.trim();
+  const uid       = document.getElementById('line-uid-input').value.trim();
+  const threshold = parseFloat(document.getElementById('line-threshold-input').value) || 50;
+  if (!token || !uid) { alert('กรุณากรอก Token และ User ID'); return; }
+  try {
+    await set(ref(fbDb, '/settings/notify_config/line_channel_token'), token);
+    await set(ref(fbDb, '/settings/notify_config/line_user_id'), uid);
+    await set(ref(fbDb, '/settings/notify_config/threshold_pm25'), threshold);
+    const okEl = document.getElementById('line-save-ok');
+    okEl.style.display = 'block';
+    setTimeout(() => { okEl.style.display = 'none'; }, 3000);
+  } catch (e) { alert('บันทึกไม่สำเร็จ: ' + e.message); }
+};
+
+// Pre-fill saved values on load
+get(_notifyRef).then(snap => {
+  const cfg = snap.val() || {};
+  if (cfg.line_channel_token) document.getElementById('line-token-input').value   = cfg.line_channel_token;
+  if (cfg.line_user_id)       document.getElementById('line-uid-input').value     = cfg.line_user_id;
+  if (cfg.threshold_pm25)     document.getElementById('line-threshold-input').value = cfg.threshold_pm25;
+}).catch(() => {});
+
 function tryAlert(pm){
   if(!alertEnabled) return;
   if(pm > alertThreshold && !alertDismissed){
