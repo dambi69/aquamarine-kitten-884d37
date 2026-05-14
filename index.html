@@ -534,7 +534,7 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 .setting-input:focus { border-color:var(--mint); }
 .setting-input-label { font-size:.72rem; font-weight:600; color:var(--text); margin-top:10px; display:block; }
 .setting-save-btn { margin-top:10px; width:100%; padding:10px; border-radius:12px; background:var(--mint); color:#fff; font-size:.82rem; font-weight:700; border:none; cursor:pointer; font-family:'Nunito','Sarabun',sans-serif; transition:background .2s; }
-.setting-save-btn:hover { background:var(--sky); }
+.setting-save-btn:hover { background:var(--mint-dark,#1d7a54); }
 .setting-save-ok { display:none; font-size:.7rem; color:var(--mint); text-align:center; margin-top:6px; font-weight:600; }
 </style>
 </head>
@@ -1097,7 +1097,7 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:22px; height:22
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getDatabase, ref, onValue, query, limitToLast, set, get }
+import { getDatabase, ref, onValue, query, limitToLast, set, get, update }
   from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
 /* ── Config ── */
@@ -1231,13 +1231,21 @@ window.saveLineConfig = async function () {
   const threshold = parseFloat(document.getElementById('line-threshold-input').value) || 50;
   if (!token || !uid) { alert('กรุณากรอก Token และ User ID'); return; }
   try {
-    await set(ref(fbDb, '/settings/notify_config/line_channel_token'), token);
-    await set(ref(fbDb, '/settings/notify_config/line_user_id'), uid);
-    await set(ref(fbDb, '/settings/notify_config/threshold_pm25'), threshold);
+    await update(_notifyRef, {
+      line_channel_token: token,
+      line_user_id: uid,
+      threshold_pm25: threshold,
+    });
     const okEl = document.getElementById('line-save-ok');
     okEl.style.display = 'block';
     setTimeout(() => { okEl.style.display = 'none'; }, 3000);
   } catch (e) { alert('บันทึกไม่สำเร็จ: ' + e.message); }
+};
+
+window.togglePush = function(enabled) {
+  document.getElementById('push-status').textContent = enabled
+    ? 'ยังไม่ได้ตั้งค่า VAPID key (Task 8)'
+    : 'ปิด Browser Push';
 };
 
 // Pre-fill saved values on load
@@ -1245,7 +1253,14 @@ get(_notifyRef).then(snap => {
   const cfg = snap.val() || {};
   if (cfg.line_channel_token) document.getElementById('line-token-input').value   = cfg.line_channel_token;
   if (cfg.line_user_id)       document.getElementById('line-uid-input').value     = cfg.line_user_id;
-  if (cfg.threshold_pm25)     document.getElementById('line-threshold-input').value = cfg.threshold_pm25;
+  if (cfg.threshold_pm25) {
+    document.getElementById('line-threshold-input').value = cfg.threshold_pm25;
+    const slider = document.getElementById('thresh-slider');
+    if (slider) {
+      slider.value = Math.min(parseInt(slider.max || 150), Math.max(parseInt(slider.min || 10), cfg.threshold_pm25));
+      if (typeof updateSliderFill === 'function') updateSliderFill();
+    }
+  }
 }).catch(() => {});
 
 function tryAlert(pm){
